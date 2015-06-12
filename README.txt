@@ -1,3 +1,21 @@
+Please use the "Download ZIP" button of github page
+---------------------------------------------------
+
+to compile:
+make
+
+to run:
+depms FSP_INSTANCE_FILE CSV_OUTPUT_FILE --heu NEH_FILE
+deptft FSP_INSTANCE_FILE CSV_OUTPUT_FILE --heu LR_FILE
+
+FSP_INSTANCE_FILE, NEH_FILE, LR_FILE are contained in the directory "test_problems"
+
+----------------------------------------------------
+
+the directories "lr" and "neh" contain the software to generate LR_FILE and NEH_FILE given a FSP_INSTANCE_FILE
+
+----------------------------------------------------
+
 DEFINES PER COMPILAZIONE:
 
 1) ONLINEPRINT: attiva stampa durante l'esecuzione
