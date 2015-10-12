@@ -16,28 +16,28 @@ the directories "lr" and "neh" contain the software to generate LR_FILE and NEH_
 
 ----------------------------------------------------
 
-DEFINES PER COMPILAZIONE:
+MANIFEST CONSTANTS FOR THE COMPILATION:
 
-1) ONLINEPRINT: attiva stampa durante l'esecuzione
-2) MYDEBUG: attiva stampa/stop per debug
-3) GFC: attiva l'uso della struttura dati GFC per il calcolo fitness veloce in local search
+1) ONLINEPRINT: it enables printing-while-running code
+2) MYDEBUG: to have some debug infos
+3) GFC: enable/disable the use of the GFC data structure for fast fitness computation during the local search phase
 
-NOTA: Si attivano aggiungendo "-DONLINEPRINT" (e simili) alla fine della riga "CPPFLAGS" nel "Makefile"
+NOTE: You can enable the constants above by adding "-DONLINEPRINT" (et similia) at the row "CPPFLAGS" of the "Makefile"
 
 -------------------------------------------------------------------------------------------------------
 
-MUTAZIONI DIFFERENTI:
+OTHER MUTATIONS FOR TEST PURPOSES:
 
 1) dep.cpp.ORIGINAL
-contiene il codice per la differential mutation originale dell'articolo
+it contains the code for the original differential mutation introduced in the paper
 
 2) dep.cpp.PATHRELINKING 
-contiene il codice per sostituire la diff. mutation con il path relinking
+it contains the code for the path relinking implementation
 
 3) dep.cpp.RANDOMINDIVIDUAL 
-contiene il codice per sostituire la diff. mutation con un individuo random dalla popolazione corrente
+it contains the code for the "random individual" mutation
 
 4) dep.cpp.COMPLETELYRANDOM
-contiene il codice per sostituire la diff. mutation con un nuovo individuo completamente random
+it contains the code for the "completely random" mutation
 
-NOTA: Ognuna delle 4 diverse mutazioni va attivata copiando il relativo file su dep.cpp prima della compilazione
+NOTE: In order to compile with the chosen mutation scheme, please copy the chosen file to dep.cpp and then compile
