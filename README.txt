@@ -29,7 +29,7 @@ NOTE: You can enable the constants above by adding "-DONLINEPRINT" (et similia) 
 OTHER MUTATIONS FOR TEST PURPOSES:
 
 1) dep.cpp.ORIGINAL
-it contains the code for the original differential mutation introduced in the paper
+it contains the code for the original differential mutation introduced in the paper (generators are adjacent swaps and randomized decomposition is performed by means of randomized bubble sort)
 
 2) dep.cpp.PATHRELINKING 
 it contains the code for the path relinking implementation
@@ -39,5 +39,8 @@ it contains the code for the "random individual" mutation
 
 4) dep.cpp.COMPLETELYRANDOM
 it contains the code for the "completely random" mutation
+
+5) dep.cpp.INSERTIONS
+introduced on date 03-11-2015. It is like (1) but it uses insertions as generators and randomized insertion sort as randomized decomposition algorithm
 
 NOTE: In order to compile with the chosen mutation scheme, please copy the chosen file to dep.cpp and then compile

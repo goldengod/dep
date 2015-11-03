@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
    //allocate dep memory
    depAlloc();
    //some printing before dep execution
-   cout << "STARTING DEPTFT:" << endl;
+   cout << "STARTING DEP:" << endl;
    cout << "               exe = " << exe << endl;
    cout << " -        instance = " << instance << endl;
    cout << " -               n = " << n << endl;
@@ -106,14 +106,14 @@ int main(int argc, char** argv) {
       cout << endl << " -        saveFile = " << saveFile << endl;
       cout << " -      scriptFile = " << scriptFile << endl;
    }
-   cout << "... DEPTFT IS RUNNING ..." << endl;
+   cout << "... DEP IS RUNNING ..." << endl;
    //execute dep basing on normal or resume execution mode
    if (!resume)
       dep(); //normal execution
    else
       depResume(saveFile); //resume execution
    //some printing after dep execution
-   cout << "DEPTFT DONE:" << endl;
+   cout << "DEP DONE:" << endl;
    cout << " -          fgbest = " << fgbest << endl;
    cout << " -     nfesFoundAt = " << nfesFoundAt << endl;
    cout << " -    stageFoundAt = " << stageFoundAt << endl;
