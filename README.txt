@@ -24,7 +24,7 @@ MANIFEST CONSTANTS FOR THE COMPILATION:
 
 NOTE: You can enable the constants above by adding "-DONLINEPRINT" (et similia) at the row "CPPFLAGS" of the "Makefile"
 
--------------------------------------------------------------------------------------------------------
+----------------------------------------------------
 
 OTHER MUTATIONS FOR TEST PURPOSES:
 
@@ -44,3 +44,12 @@ it contains the code for the "completely random" mutation
 introduced on date 03-11-2015. It is like (1) but it uses insertions as generators and randomized insertion sort as randomized decomposition algorithm
 
 NOTE: In order to compile with the chosen mutation scheme, please copy the chosen file to dep.cpp and then compile
+
+----------------------------------------------------
+
+VERSION HISTORY:
+
+v1.00 - uploaded the 12 jun 2015 - first version
+v1.01 - uploaded the 03 nov 2015 - differential mutation with insertions' generators added (dep.cpp.INSERTIONS)
+
+
