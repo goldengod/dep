@@ -41,7 +41,7 @@ it contains the code for the "random individual" mutation
 it contains the code for the "completely random" mutation
 
 5) dep.cpp.INSERTIONS
-introduced on date 03-11-2015. It is like (1) but it uses insertions as generators and randomized insertion sort as randomized decomposition algorithm
+introduced on date 03-11-2015. Final version on date 16-11-2015. It is like (1) but it uses insertions as generators and randomized insertion sort
 
 NOTE: In order to compile with the chosen mutation scheme, please copy the chosen file to dep.cpp and then compile
 
@@ -51,5 +51,7 @@ VERSION HISTORY:
 
 v1.00 - uploaded the 12 jun 2015 - first version
 v1.01 - uploaded the 03 nov 2015 - differential mutation with insertions' generators added (dep.cpp.INSERTIONS)
+v1.02 - uploaded the 16 nov 2015 - sorting sequence (instead of decomposition) on insertions (modified dep.cpp.INSERTIONS)
+
 
 
