@@ -91,7 +91,7 @@ static double* sfy;
 static double* sfs; //sfx-sfy
 
 //inner temporary memory for diffMutation/crossover
-static int* tmpint;  //length = 2*n + 3*n (one decomposition sequence + three permutations) //INSERTIONS!!!
+static int* tmpint;  //length = n^2 + 3*n (1 matrix for cycles + 1 sorting seq. + 1 perm.) //EXCHANGES!!!
 
 //inner bool flag indicating if fitnesses are all equal
 static bool sameFitness;
@@ -134,8 +134,7 @@ inline void updateGbest(int* x, int fx);
 inline bool termination();
 void popInit();
 bool popEvolve();
-//inline void randis(int* d, int& l, int* x);   //INSERTIONS!!! //old decomposition version
-inline void randis(int* s, int& l, int* x);     //INSERTIONS!!! //new sorting version
+inline void randss(int* s, int& l, int* x);     //EXCHANGES!!!
 void diffMutation(int i);
 inline void tpii(int* ch, int* fa, int* mo, int* ifa, int c1, int c2);
 void crossover(int i);
@@ -256,7 +255,7 @@ void depAlloc() {
    sfx = sfs;
    sfy = sfx+np;
    //temporary diffMutation/crossover memory
-   tmpint = new int[5*n]; //one insertions sequence (2*n) + three permutations //INSERTIONS!!!
+   tmpint = new int[n*n+3*n]; //1 matrix cycles + 1 exchanges seq. + 1 perms.  //EXCHANGES!!!
    //set the permutation byte size
    permByteSize = sizeof(int)*n;
    //lsHistory
@@ -408,198 +407,161 @@ bool popEvolve() {
 }
 
 
-//NEW SORTING VERSION!!!
-//s/l = sequence that sorts x using insertions (INS_k(i,j) is s[2*k]<->s[2*k+1])
-void randis(int* s, int& l, int* x) {
-   //variables
-   int i,j,k,y,a,b,m,ql,ll,ul,jmin,jmax,ind,w;
-   //initialize working memory (note that s is tmpint and take 2*n space)
-   static int* lis = tmpint+2*n; //just at the right of s   ("alive" together with s and u)
-   static int* u = lis+n;        //just at the right of lis ("alive" together with s and lis)
-   static int* t = tmpint;       //reuse part of s space    ("alive" together with lis,u,q but not s)
-   static int* q = tmpint+n;     //reuse part of s space    ("alive" together with lis,u,t but not s)
-   /*
-   PHASE1) Compute the following data:
-      - t = array s.t. t[x[i]] is the length of a lis ending with x[i]
-      - ll = length of a lis
-      - ind = index of a uniformly random element that ends a lis (with length k)
-      COST: O(n*log(n))
+//s/l = sequence that sorts x using exchanges (SWAP_k(i,j) is s[2*k]<->s[2*k+1])
+void randss(int* s, int& l, int* x) {
+   //some variables
+   int i,nc,vc,nv,nexc,r,e,p1,p2,t,lc1,lc2;
+   static bool* v = (bool*)(tmpint+n); //alive with x,c,lc (reuse part of s not used by x)
+   static int* lc = tmpint+(2*n);      //alive with x,s,c,v (memory just after v)
+   static int* c = tmpint+(3*n);       //alive with x,v,c,lc (last chunk of memory of size n^2)
+   /* PHASE1 / Cycles decomposition of x (store only cycles **GREATER THAN 1**) / outputs will be:
+      - nc is the TOTAL number of cycles of x
+      - vc is the number of cycles of x GREATER THAN 1 (so the length of c)
+      - c is a (n*n)-matrix s.t. c[i] contains the items of i-th cycle (g.t. 1) of x
+      - lc is a n-vector s.t. lc[i] is the length of c[i]
+      - nexc is the total number of exchanges for sorting x (it is SUM_{i=0}^{vc-1}(lc[i] choose 2))
+      - COST: O(n)
    */
-   //initialize length of the priority queue and length of the lis to 0
-   ql = ll = 0;
-   //scan the array (left-to-right) in order to: set t[x[i]], update ll and ind
-   for (i=0; i<n; i++) {
-      //y is the current value
-      y = x[i];
-      //binary search to find the index a (==b) of the smallest value in q greater than y
-      a = 0;
-      b = ql;
-      while (a<b) {
-         m = (a+b)/2;
-         if (y>q[m])
-            a = m+1;
-         else
-            b = m;
-      }
-      //replace q[a] with y and increase ql if a==ql
-      q[a] = y;
-      if (a==ql)
-         ql++;
-      //set t[y]
-      t[y] = a==0 ? 1 : 1+t[q[a-1]];
-      //update ll (max length) and ind (random index with length ll using reservoir sampling)
-      if (t[y]>ll) {
-         ll = t[y];
-         k = 1;            //init/reset reservoir sampling counter
-         ind = i;
-      } else if (t[y]==ll) {
-         k++;              //update reservoir sampling counter
-         if (irand(k)==0)  //same as rand01()<=1/k (reservoir sampling choice)
-            ind = i;
-      }
-   } //end-for
-   /*
-   PHASE2) Compute the following data:
-      - lis = array of length ll s.t. x[lis[i]] is the i-th _value_ of a RANDOM lis
-      - u = array of length ul=N-ll s.t. x[u[i]] is _not_ a _value_ of the lis
-      COST: O(n)
-   */
-   //the indexes from ind+1 to N-1 go directly in u
-   ul = 0;
-   for (i=ind+1; i<n; i++)
-      u[ul++] = i;
-   //set target length (m=ll-1) and last lis index (ind)
-   m = ll - 1;
-   lis[m] = ind;
-   //set minimum length value for which an index entered in lis so far
-   a = ll;
-   //scan (right-to-left) from ind-1 to 0 in order to fill lis
-   for (i=ind-1; i>=0; i--) {
-      //y is the (current) length of a lis ending at x[i], thus i is a candidate for lis[y-1]
-      y = t[x[i]];
-      //current value x[i] is feasible iff:
-      //(1) its length y (==t[x[i]]) is greater or equal to the target length, AND
-      //(2) its length differs from lis length ll (other end-values excluded by res.sampl. of phase1), AND
-      //(3) it is smaller than the lis value at position y (for sure already filled)
-      if (y>=m && y<ll && x[i]<x[lis[y]] ) { //feasible
-         //two cases to consider:
-         //(1) normal: y==m (current length matches target length)
-         //(2) backtracking: y>m (current length greater than target length)
-         if (y==m) { //normal case
-            //update min length value for which an index entered in lis so far
-            //(this is the only place where new smaller length value can be discovered)
-            //or, if not a new min, for sure there was a previous index in lis that has to move in u
-            if (m<a)
-               a = m;
-            else
-               u[ul++] = lis[m-1];
-            //reset/set length observation counter to 1 (used for reservoir sampling) (no need to init)
-            q[m] = 1;
-            //set lis index and decrement target length (it is like reservoir sampling with probability 1)
-            lis[--m] = i;
-            //end of normal case
-         } else { //backtracking case (y>m for sure, since y<m has been already discarded)
-            //increment the counter of observed values with this length
-            q[y]++;
-            //using res.sampling: set lis/u index, update target length and u
-            if (irand(q[y])==0) {   //same as rand01()<1/q[y]
-               m = y-1;          //new target length
-               u[ul++] = lis[m]; //old lis value goes in u
-               lis[m] = i;       //replace lis[m] with i
-            } else //if res.sampling say no, i goes directly in u
-               u[ul++] = i;
-            //end of backtracking case
+   //initialize v to all false and other counters to 0 (also the first cycle length)
+   memset(v,0,sizeof(bool)*n); //all false
+   nc = vc = nexc = nv = i = lc[0] = 0;
+   //initialize the leftmost
+   //scan all the items in the order given by the permutation (first open cycle is nc=0)
+   for (;;) {
+      //insert current index in the currently open cycle (and increase its length)
+      c[vc*n+(lc[vc]++)] = i; //in matrix form = c[vc][lc[vc]++] = i;
+      //set the visited flag of the i-th index and increase nv
+      v[i] = true;
+      nv++;
+      //if all indexes have been visited, then close the cycle and exit the loop
+      if (nv==n) {
+         if (lc[vc]>1) { //update nexc and increase vc iff its length is greater than 1
+            nexc += lc[vc]*(lc[vc]-1)/2; //(lc[vc] choose 2)
+            vc++;
          }
-         //end of feasible branch
-      } else { //unfeasible
-         //i goes directly in u
-         u[ul++] = i;
-         //end of unfeasible branch
+         nc++;
+         break;
       }
-      //proceed to next/left item
-   }
-   /*
-   PHASE3) The following part of code:
-      - compute l (==N-ll), i.e., the length of a decomposition (sorting sequance) of x
-      - compute a random sorting sequence of x in the output parameter s in a way that
-         x^-1 = INS(s[0],s[1]) * ... * INS(s[2*(l-1)],s[2*(l-1)+1]) = PROD_{i=0}^{l-1} INS(s[2*i],s[2*i+1])
-         x = INS(s[2*(l-1)+1],s[2*(l-1)] * ... * INS(s[1],s[0]) = PROD_{i=l-1}^{0} INS(s[2*i+1],s[2*i])
-      - sort x
-      COST: O(n^2)
-   */
-   //decomposition d has length equal to initial u length
-   l = ul;
-   //initialize s true length
-   w = 0;
-   //while the lis length is less than N increase it and perform bookkeeping
-   while (ll<n) {
-      //select and remove a random index i from u (note that ul is decremented)
-      k = irand(ul);
-      i = u[k];
-      ul--;
-      if (k!=ul)   //if it is not the last, then swap it with the last
-         u[k] = u[ul];
-      //binary search to find the position a (==b) of the successor value of x[i] in the lis
-      a = 0;
-      b = ll;
-      while (a<b) {
-         m = (a+b)/2;
-         if (x[i]>x[lis[m]])
-            a = m+1;
-         else
-            b = m;
-      }
-      //succ (pred) value of x[i] is x[lis[a]] (x[lis[a-1]]), thus we take their indexes
-      jmin = a==0 ? 0 : lis[a-1];
-      jmax = a<ll ? lis[a] : n-1;
-      //choose a random index j from [jmin,jmax) for i<jmin or from (jmin,jmax] for i>jmax
-      if (jmin==jmax)
-         j = jmin;
-      else
-         j = jmin + (i<jmin?0:1) + irand(jmax-jmin);
-      //append INS(i,j) in the sorting sequence s (and increase its length)
-      s[2*w] = i;
-      s[2*w+1] = j;
-      w++;
-      //update x,lis,u by reflecting their values after x=x*INS(i,j):
-      //insert index j at position a in lis (thus, move right lis elements from a to ll and increment ll)
-      if (a<ll) //this if is needed only when i<j
-         memmove(lis+a+1,lis+a,sizeof(int)*(ll-a));
-      ll++;
-      lis[a] = j;
-      //store in a temporary variable (y) x[i]
-      y = x[i];
-      //2 cases: i<j and i>j
-      if (i<j) {
-         //decrement lis[k] s.t. 0<=k<a and lis[k]>i (now lis is updated)
-         for (; --a>=0 && lis[a]>i;)
-            lis[a]--;
-         //move-left values x[i+1..j] because it is a forward insertion
-         memmove(x+i,x+i+1,sizeof(int)*(j-i));
-         //decrement u[k] s.t. i<u[k]<=j (now u is updated)
-         for (k=0; k<ul; k++)
-            if (u[k]>i && u[k]<=j)
-               u[k]--;
-         //end of i<j branch
-      } else { //i>j
-         //increment lis[k] s.t. a<k<ll and lis[k]<i (now lis is updated)
-         for (; ++a<ll && lis[a]<i;)
-            lis[a]++;
-         //move-right values x[j..i] because it is a backward insertion
-         memmove(x+j+1,x+j,sizeof(int)*(i-j));
-         //increment u[k] s.t. j<=u[k]<i (now u is updated)
-         for (k=0; k<ul; k++)
-            if (u[k]<i && u[k]>=j)
-               u[k]++;
-         //end of i>j branch
-      }
-      //finalize x*INS(i,j) by storing in x[j] the temporary value y (now x is updated)
-      x[j] = y;
-      //proceed to next insertion
-   }
+      //try to move index by following the cycle
+      i = x[i];
+      //check if cycle has to be closed
+      if (v[i]) { //same as if (i==c[vc*n]) { //matrix form i==c[vc][0]
+         //close the cycle
+         if (lc[vc]>1) {
+            nexc += lc[vc]*(lc[vc]-1)/2; //(lc[vc] choose 2)
+            vc++;
+         }
+         nc++;
+         //open next cycle by setting/resetting its length
+         lc[vc] = 0;
+         //move to next unvisited index (no need to move circularly, leftmost unv. index ensured)
+         while (v[++i]);
+      } //end-if
+   } //end-infinite-for
 #ifdef MYDEBUG
-   if (w!=l) {
-      cout<<"w!=l"<<endl;
+   int debugSum2 = 0;
+   for (int debugi=0; debugi<vc; debugi++)
+      debugSum2 += lc[debugi];
+   debugSum2 += (nc-vc);
+   if (debugSum2!=n) {
+      cout << "sum of cycles lengths does not match n" << endl;
+      exit(1);
+   }
+#endif
+   /* PHASE2 / Sorting sequence of x / outputs will be:
+      - l (==n-nc), i.e. the length of a decomposition (sorting sequence) of x
+      - s, i.e. a sorting sequence of x such that:
+         x^-1 = EXC(s[0],s[1]) * ... * EXC(s[2*(l-1)],s[2*(l-1)+1]) = PROD_{i=0}^{l-1} EXC(s[2*i],s[2*i+1])
+         x = EXC(s[2*(l-1)],s[2*(l-1)+1]) * ... * EXC(s[0],s[1]) = PROD_{i=l-1}^{0} EXC(s[2*i],s[2*i+1])
+      - does not sort x
+      - COST: O(n^2) ???
+   */
+   //initialize decomposition length to 0 (it will be n-nc at the end)
+   l = 0;
+   //loop until there are n cycles of length 1
+   while (vc>0) {
+#ifdef MYDEBUG
+      int debugSum = 0;
+      for (int debugi=0; debugi<vc; debugi++)
+         debugSum += lc[debugi]*(lc[debugi]-1)/2;
+      if (debugSum!=nexc) {
+         cout << "sum of (lc[i] choose 2) does not match nexc" << endl;
+         exit(1);
+      }
+#endif
+      //select a random cycle i using roulette wheel where lc[i]s are the slice sizes
+      r = irand(nexc);
+      for (i=0; i<vc; i++) {
+         e = lc[i]*(lc[i]-1)/2;  //#exchanges in cycle i
+         if (r<e)                //i is the chosen cycle
+            break;
+         r -= e;                 //update r to implement roulette wheel
+      }
+      //decrease nexc by the exchanges of cycle i
+      nexc -= lc[i]*(lc[i]-1)/2; //(lc[i] choose 2)
+      //select two random indexes in cycle i
+      twoRandIndices(lc[i],p1,p2);
+      //make p1<p2 (note that EXC(x,y)==EXC(y,x))
+      if (p1>p2) {
+         t = p1;
+         p1 = p2;
+         p2 = t;
+      }
+      //store the exchange indexes in s and increase l (note that EXC(x,y)==EXC(y,x))
+      s[2*l] = c[n*i+p1];
+      s[2*l+1] = c[n*i+p2];
+      l++;
+      //two new cycles: C'=[0,p1]+(p2,lc[i]) and C''=(p1,p2]
+      //compute length of C' (lc1) and C'' (lc2)
+      lc1 = p1-p2+lc[i];   //len[0,p1] + len(p2,lc[i]) = p1+1 + lc[i]-p2-1 = p1-p2+lc[i]
+      lc2 = p2-p1;         //len(p1,p2]
+      //4 cases:
+      //(1) lc1>1 and lc2>1: update cycle i with C' and add cycle C'' at the end
+      //(2) lc1>1 and lc2=1: update cycle i with C'
+      //(3) lc1=1 and lc2>1: update cycle i with C''
+      //(4) lc1=1 and lc2=1: remove cycle i by moving last cycle in position i
+      if (lc1>1 && lc2>1) { //case 1
+         //add cycle C'' at the last position and increment vc
+         memcpy(c+n*vc,c+n*i+p1+1,sizeof(int)*lc2);
+         lc[vc] = lc2;
+         vc++;
+         //update cycle i with C' by moving the slice (p2,lc[i]) (if not empty) after p1
+         t = lc[i]-p2-1;   //len(p2,lc[i])
+         if (t>0)
+            memmove(c+n*i+p1+1,c+n*i+p2+1,sizeof(int)*t);
+         lc[i] = lc1;
+         //increase nexc by the exchanges of C' and C''
+         nexc += (lc1*(lc1-1)+lc2*(lc2-1))/2; //(lc1 choose 2)+(lc2 choose 2)
+         //case 1 done
+      } else if (lc1>1 && lc2==1) { //case 2
+         //update cycle i with C' by moving the slice (p2,lc[i]) (if not empty) after p1
+         t = lc[i]-p2-1;   //len(p2,lc[i])
+         if (t>0)
+            memmove(c+n*i+p1+1,c+n*i+p2+1,sizeof(int)*t);
+         lc[i] = lc1;
+         //increase nexc by the exchanges in C'
+         nexc += lc1*(lc1-1)/2; //(lc1 choose 2)
+         //case 2 done
+      } else if (lc2>1) { //case 3
+         //update cycle i with C'' by moving the slice (p1,p2] at position 0
+         memmove(c+n*i,c+n*i+p1+1,sizeof(int)*lc2);
+         lc[i] = lc2;
+         //increase nexc by the exchanges in C''
+         nexc += lc2*(lc2-1)/2; //(lc2 choose 2)
+         //case 3 done
+      } else { //case 4
+         //move last cycle (vc-1)th in position i and decrease vc (if cycle i is not the last)
+         vc--;
+         if (i!=vc) {
+            memcpy(c+n*i,c+n*vc,sizeof(int)*lc[vc]);
+            lc[i] = lc[vc];
+         }
+         //case 4 done
+      } //end-cases
+   } //end-while
+#ifdef MYDEBUG
+   if (l!=n-nc) {
+      cout << "in randss l does not match n-nc" << endl;
       exit(1);
    }
 #endif
@@ -609,12 +571,12 @@ void randis(int* s, int& l, int* x) {
 
 
 //differential mutation of individual i
-void diffMutation(int i) { //INSERTIONS!!!
+void diffMutation(int i) { //EXCHANGES!!!
    //DE/rand/1: y1[i] = x[r0] + F * (x[r1] - x[r2])
    //initialize variables
-   int r0,r1,r2,*p,*pt,*ix1,lss,j,k,insi,insj;
-   static int* ss = tmpint; //use the temp memory (sorting sequence - 2*n max length)
-   static int* ix1dotx2 = tmpint+4*n; //use the last chunk of temp memory
+   int r0,r1,r2,*p,*pt,*ix1,lss,j,k,exci,excj,t;
+   static int* ss = tmpint; //temp memory (max length 2*n) //EXCHANGES
+   static int* ix1dotx2 = tmpint; //tempmem (n) alive with ss so ix1dotx2 DESTROYED ON RANDSS //EXCHANGES!!!
    //get 3 different indexes r0,r1,r2 different also from i
    threeRandIndicesDiffFrom(np,i,r0,r1,r2);
    //x[r1]-x[r2] = x[r2]^-1*x[r1] = sort_seq.(x[r1]^-1*x[r2]) in 2 steps (I already know x[r1]^-1=ix[r1]):
@@ -629,8 +591,26 @@ void diffMutation(int i) { //INSERTIONS!!!
       exit(1);
    }
 #endif
-   //(2) ss,lss = randis(ix1dotx2)
-   randis(ss,lss,ix1dotx2);
+   //(2) ss,lss = randss(ix1dotx2)
+#ifdef MYDEBUG
+   static int* debugx = new int[n];
+   memcpy(debugx,ix1dotx2,sizeof(int)*n);
+#endif
+   randss(ss,lss,ix1dotx2);
+#ifdef MYDEBUG
+   for (int debugi=0; debugi<2*lss; debugi+=2) {
+      int debugi1 = ss[debugi];
+      int debugi2 = ss[debugi+1];
+      int debugt = debugx[debugi1];
+      debugx[debugi1] = debugx[debugi2];
+      debugx[debugi2] = debugt;
+   }
+   for (int debugi=0; debugi<n; debugi++)
+      if (debugx[debugi]!=debugi) {
+         cout << "randss does not sort" << endl;
+         exit(1);
+      }
+#endif
    //compute scale factor and truncation bound using jde rule
    sfy[i] = urand()<.1 ? .1+.9*urandi() : sfx[i];
    k = sfy[i] * lss + .5; //ceil rounding
@@ -639,9 +619,11 @@ void diffMutation(int i) { //INSERTIONS!!!
    memcpy(p,x[r0],permByteSize);
    pt = ss; //... since ss is a static variable
    for (j=0; j<k; j++) { //ss is a sorting sequence, so "inversion happened automatically"
-      insi = *pt++;
-      insj = *pt++;
-      ins(p,insi,insj);
+      exci = *pt++;
+      excj = *pt++;
+      t = p[exci];
+      p[exci] = p[excj];
+      p[excj] = t;
    }
 #ifdef MYDEBUG
    if (!permValid(y1[i],n)) {
@@ -1233,241 +1215,4 @@ bool popForcedRestart() {
    return termination();
    //done
 }
-
-
-
-/* OLD DECOMPOSITION VERSION!!!
-//d/l = insertions that decompose x (NOTE: decomposition and not sorting sequence!!!)
-inline void randis(int* d, int& l, int* x) {
-   //variables
-   int i,j,k,y,a,b,m,ql,ll,ul,jmin,jmax,ind;
-   //initialize working memory (note that d is tmpint and take 2*n space)
-   static int* lis = tmpint+2*n; //just at the right of d   ("alive" together with d and u)
-   static int* u = lis+n;        //just at the right of lis ("alive" together with d and lis)
-   static int* t = tmpint;       //reuse part of d space    ("alive" together with lis,u,q but not d)
-   static int* q = tmpint+n;     //reuse part of d space    ("alive" together with lis,u,t but not d)
-   /*
-   PHASE1) Compute the following data:
-      - t = array s.t. t[x[i]] is the length of a lis ending with x[i]
-      - ll = length of a lis
-      - ind = index of a uniformly random element that ends a lis (with length k)
-      COST: O(n*log(n))
-   *//*
-   //initialize length of the priority queue and length of the lis to 0
-   ql = ll = 0;
-   //scan the array (left-to-right) in order to: set t[x[i]], update ll and ind
-   for (i=0; i<n; i++) {
-      //y is the current value
-      y = x[i];
-      //binary search to find the index a (==b) of the smallest value in q greater than y
-      a = 0;
-      b = ql;
-      while (a<b) {
-         m = (a+b)/2;
-         if (y>q[m])
-            a = m+1;
-         else
-            b = m;
-      }
-      //replace q[a] with y and increase ql if a==ql
-      q[a] = y;
-      if (a==ql)
-         ql++;
-      //set t[y]
-      t[y] = a==0 ? 1 : 1+t[q[a-1]];
-      //update ll (max length) and ind (random index with length ll using reservoir sampling)
-      if (t[y]>ll) {
-         ll = t[y];
-         k = 1;            //init/reset reservoir sampling counter
-         ind = i;
-      } else if (t[y]==ll) {
-         k++;              //update reservoir sampling counter
-         if (irand(k)==0)  //same as rand01()<=1/k (reservoir sampling choice)
-            ind = i;
-      }
-   } //end-for
-   /*
-   PHASE2) Compute the following data:
-      - lis = array of length ll s.t. x[lis[i]] is the i-th _value_ of a RANDOM lis
-      - u = array of length ul=N-ll s.t. x[u[i]] is _not_ a _value_ of the lis
-      COST: O(n)
-   *//*
-   //the indexes from ind+1 to N-1 go directly in u
-   ul = 0;
-   for (i=ind+1; i<n; i++)
-      u[ul++] = i;
-   //set target length (m=ll-1) and last lis index (ind)
-   m = ll - 1;
-   lis[m] = ind;
-   //set minimum length value for which an index entered in lis so far
-   a = ll;
-   //scan (right-to-left) from ind-1 to 0 in order to fill lis
-   for (i=ind-1; i>=0; i--) {
-      //y is the (current) length of a lis ending at x[i], thus i is a candidate for lis[y-1]
-      y = t[x[i]];
-      //current value x[i] is feasible iff:
-      //(1) its length y (==t[x[i]]) is greater or equal to the target length, AND
-      //(2) its length differs from lis length ll (other end-values excluded by res.sampl. of phase1), AND
-      //(3) it is smaller than the lis value at position y (for sure already filled)
-      if (y>=m && y<ll && x[i]<x[lis[y]] ) { //feasible
-         //two cases to consider:
-         //(1) normal: y==m (current length matches target length)
-         //(2) backtracking: y>m (current length greater than target length)
-         if (y==m) { //normal case
-            //update min length value for which an index entered in lis so far
-            //(this is the only place where new smaller length value can be discovered)
-            //or, if not a new min, for sure there was a previous index in lis that has to move in u
-            if (m<a)
-               a = m;
-            else
-               u[ul++] = lis[m-1];
-            //reset/set length observation counter to 1 (used for reservoir sampling) (no need to init)
-            q[m] = 1;
-            //set lis index and decrement target length (it is like reservoir sampling with probability 1)
-            lis[--m] = i;
-            //end of normal case
-         } else { //backtracking case (y>m for sure, since y<m has been already discarded)
-            //increment the counter of observed values with this length
-            q[y]++;
-            //using res.sampling: set lis/u index, update target length and u
-            if (irand(q[y])==0) {   //same as rand01()<1/q[y]
-               m = y-1;          //new target length
-               u[ul++] = lis[m]; //old lis value goes in u
-               lis[m] = i;       //replace lis[m] with i
-            } else //if res.sampling say no, i goes directly in u
-               u[ul++] = i;
-            //end of backtracking case
-         }
-         //end of feasible branch
-      } else { //unfeasible
-         //i goes directly in u
-         u[ul++] = i;
-         //end of unfeasible branch
-      }
-      //proceed to next/left item
-   }
-   /*
-   PHASE3) The following part of code:
-      - compute l (==N-ll), i.e., the length of a decomposition of x
-      - compute a random decomposition of x in the output parameter d in a way that
-         x = INS(d[0],d[1]) * ... * INS(d[2*(l-1)],d[2*(l-1)+1]) = PROD_{i=0}^{l-1} INS(d[2*i],d[2*i+1])
-      - sort x
-      COST: O(n^2)
-   *//*
-   //decomposition d has length equal to initial u length
-   l = ul;
-   //while the lis length is less than N increase it and perform bookkeeping
-   while (ll<n) {
-      //select and remove a random index i from u (note that ul is decremented)
-      k = irand(ul);
-      i = u[k];
-      ul--;
-      if (k!=ul)   //if it is not the last, then swap it with the last
-         u[k] = u[ul];
-      //binary search to find the position a (==b) of the successor value of x[i] in the lis
-      a = 0;
-      b = ll;
-      while (a<b) {
-         m = (a+b)/2;
-         if (x[i]>x[lis[m]])
-            a = m+1;
-         else
-            b = m;
-      }
-      //succ (pred) value of x[i] is x[lis[a]] (x[lis[a-1]]), thus we take their indexes
-      jmin = a==0 ? 0 : lis[a-1];
-      jmax = a<ll ? lis[a] : n-1;
-      //choose a random index j from [jmin,jmax) for i<jmin or from (jmin,jmax] for i>jmax
-      if (jmin==jmax)
-         j = jmin;
-      else
-         j = jmin + (i<jmin?0:1) + irand(jmax-jmin);
-      //the ins. is INS(i,j) but I have to put INS(i,j)^{-1}=INS(j,i) at the "head of the decomposition" d
-      d[2*ul] = j;
-      d[2*ul+1] = i;
-      //update x,lis,u by reflecting their values after x=x*INS(i,j):
-      //insert index j at position a in lis (thus, move right lis elements from a to ll and increment ll)
-      if (a<ll) //this if is needed only when i<j
-         memmove(lis+a+1,lis+a,sizeof(int)*(ll-a));
-      ll++;
-      lis[a] = j;
-      //store in a temporary variable (y) x[i]
-      y = x[i];
-      //2 cases: i<j and i>j
-      if (i<j) {
-         //decrement lis[k] s.t. 0<=k<a and lis[k]>i (now lis is updated)
-         for (; --a>=0 && lis[a]>i;)
-            lis[a]--;
-         //move-left values x[i+1..j] because it is a forward insertion
-         memmove(x+i,x+i+1,sizeof(int)*(j-i));
-         //decrement u[k] s.t. i<u[k]<=j (now u is updated)
-         for (k=0; k<ul; k++)
-            if (u[k]>i && u[k]<=j)
-               u[k]--;
-         //end of i<j branch
-      } else { //i>j
-         //increment lis[k] s.t. a<k<ll and lis[k]<i (now lis is updated)
-         for (; ++a<ll && lis[a]<i;)
-            lis[a]++;
-         //move-right values x[j..i] because it is a backward insertion
-         memmove(x+j+1,x+j,sizeof(int)*(i-j));
-         //increment u[k] s.t. j<=u[k]<i (now u is updated)
-         for (k=0; k<ul; k++)
-            if (u[k]<i && u[k]>=j)
-               u[k]++;
-         //end of i>j branch
-      }
-      //finalize x*INS(i,j) by storing in x[j] the temporary value y (now x is updated)
-      x[j] = y;
-      //proceed to next insertion
-   }
-   //done
-}
-*/
-
-/*OLD DECOMPOSITION VERSION
-//differential mutation of individual i
-void diffMutation(int i) { //INSERTIONS!!!
-   //DE/rand/1: y1[i] = x[r0] + F * (x[r1] - x[r2])
-   //initialize variables
-   int r0,r1,r2,*p,*pt,*ix2,ldec,j,k,insi,insj;
-   static int* dec = tmpint;     //use the temp memory (decomposition sequence - 2*n max length)
-   static int* ix2dotx1 = tmpint+4*n;  //use the last chunk of temp memory
-   //get 3 different indexes r0,r1,r2 different also from i
-   threeRandIndicesDiffFrom(np,i,r0,r1,r2);
-   //x[r1]-x[r2] = x[r2]^-1*x[r1] = decomp(x[r2]^-1*x[r1]) in 2 steps (I already know x[r2]^-1=ix[r2]):
-   //(1) ix2dotx1 = ix2 * x[r1]
-   ix2 = ix[r2];
-   p = x[r1];
-   for (j=0; j<n; j++)
-      ix2dotx1[j] = ix2[*p++]; //same as ix2[p[j]] = ix2[x[r1][j]]
-#ifdef MYDEBUG
-   if (!permValid(ix2dotx1,n)) {
-      cout<<"diffMutation ix2dotx1"<<endl;
-      exit(1);
-   }
-#endif
-   //(2) dec,ldec = decomp(ix1dotx2) using randis
-   randis(dec,ldec,ix2dotx1);
-   //compute scale factor and truncation bound using jde rule
-   sfy[i] = urand()<.1 ? .1+.9*urandi() : sfx[i];
-   k = sfy[i] * ldec + .5; //ceil rounding
-   //apply the first k insertions in dec to x[r0] and put the result in y1[i]
-   p = y1[i];
-   memcpy(p,x[r0],permByteSize);
-   pt = dec; //... since dec is a static variable
-   for (j=0; j<k; j++) {
-      insi = *pt++;
-      insj = *pt++;
-      ins(p,insi,insj);
-   }
-#ifdef MYDEBUG
-   if (!permValid(y1[i],n)) {
-      cout<<"diffMutation y1["<<i<<"]"<<endl;
-      exit(1);
-   }
-#endif   
-   //done
-}
-*/
 
