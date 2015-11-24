@@ -412,6 +412,7 @@ bool popEvolve() {
 void randss(int* s, int& l, int* x, double f) {
    //some variables
    int i,nc,vc,nv,nexc,r,e,p1,p2,t,lc1,lc2,lim; //lim used in limited version
+   double tempDouble; //temp variable for ceil rounding
    static bool* v = (bool*)(tmpint+n); //alive with x,c,lc (reuse part of s not used by x)
    static int* lc = tmpint+(2*n);      //alive with x,s,c,v (memory just after v)
    static int* c = tmpint+(3*n);       //alive with x,v,c,lc (last chunk of memory of size n^2)
@@ -480,7 +481,10 @@ void randss(int* s, int& l, int* x, double f) {
    //initialize decomposition length to 0 (it will be n-nc at the end, but in lim. version f*(n-nc))
    l = 0;
    //compute limit for limited version
-   lim = f*(n-nc) + .5; //ceil rounding
+   //lim = f*(n-nc) + .5; //ceil rounding //(THERE WAS A BUG, it is rounding and not ceil rounding)
+   lim = tempDouble = f*(n-nc);  //ceil rounding ok
+   if (lim<tempDouble)           //ceil rounding ok
+      lim++;                     //ceil rounding ok
    //loop until there are n cycles of length 1
    //while (vc>0) { //same as "while (l<n-nc)"  //version without limit
    while (l<lim) {                              //version with limit

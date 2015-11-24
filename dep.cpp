@@ -444,6 +444,7 @@ void diffMutation(int i) {
    //DE/rand/1: y1[i] = x[r0] + F * (x[r1] - x[r2])
    //initialize variables
    int r0,r1,r2,t,k,j,w,*p,*ix1,*pt;
+   double tempDouble; //temp variable for ceil rounding
    static int* ss = tmpint;                     //use the temp memory (sorting sequence)
    static int* ix1dotx2 = tmpint+(n*(n-1)/2);   //use the temp memory
    static int* ainv = ix1dotx2+n;               //use the temp memory
@@ -473,7 +474,10 @@ void diffMutation(int i) {
    randbs(ss,w,ix1dotx2,ainv,k);
    //compute scale factor and truncation bound using jde rule
    sfy[i] = urand()<.1 ? .1+.9*urandi() : sfx[i];
-   k = sfy[i] * w + .5; //ceil rounding
+   //k = sfy[i] * w + .5; //ceil rounding    //THERE WAS A BUG (old version is rounding, not ceil rounding)
+   k = tempDouble = sfy[i] * w;     //ceil rounding ok
+   if (k<tempDouble)                //ceil rounding ok
+      k++;                          //ceil rounding ok
    //apply the first k entries of ss to x[r0] and put the result in y1[i]
    p = y1[i];
    memcpy(p,x[r0],permByteSize);

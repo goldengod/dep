@@ -414,6 +414,7 @@ bool popEvolve() {
 void randis(int* s, int& l, int* x, double f) {
    //variables
    int i,j,k,y,a,b,m,ql,ll,ul,jmin,jmax,ind,w;
+   double tempDouble; //temp variable for ceil rounding
    //initialize working memory (note that s is tmpint and take 2*n space)
    static int* lis = tmpint+2*n; //just at the right of s   ("alive" together with s and u)
    static int* u = lis+n;        //just at the right of lis ("alive" together with s and lis)
@@ -530,7 +531,10 @@ void randis(int* s, int& l, int* x, double f) {
    */
    //decomposition d has length equal to initial u length
    //l = ul;      //version without limit
-   l = f*ul + .5; //version with limit
+   //l = f*ul + .5; //version with limit (THERE WAS A BUG, it is rounding and not ceil rounding)
+   l = tempDouble = f*ul;  //ceil rounding ok
+   if (l<tempDouble)       //ceil rounding ok
+      l++;                 //ceil rounding ok
    //initialize s true length
    w = 0;
    //while the lis length is less than N increase it and perform bookkeeping
