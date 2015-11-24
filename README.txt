@@ -56,5 +56,6 @@ v1.00 - uploaded the 12 jun 2015 - first version
 v1.01 - uploaded the 03 nov 2015 - differential mutation with insertions' generators added (dep.cpp.INSERTIONS)
 v1.02 - uploaded the 16 nov 2015 - sorting sequence (instead of decomposition) on insertions (modified dep.cpp.INSERTIONS)
 v1.03 - uploaded the 19 nov 2015 - differential mutation with exchanges' generators added (dep.cpp.EXCHANGES)
+v1.04 - uploaded the 24 nov 2015 - limited/bounded version for randis,randss (dep.cpp.INSERTIONS,dep.cpp.EXCHANCES)
 
 

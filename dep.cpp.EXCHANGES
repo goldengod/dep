@@ -134,7 +134,7 @@ inline void updateGbest(int* x, int fx);
 inline bool termination();
 void popInit();
 bool popEvolve();
-inline void randss(int* s, int& l, int* x);     //EXCHANGES!!!
+inline void randss(int* s, int& l, int* x, double f=1.0);     //EXCHANGES!!! (LIMITS)
 void diffMutation(int i);
 inline void tpii(int* ch, int* fa, int* mo, int* ifa, int c1, int c2);
 void crossover(int i);
@@ -408,9 +408,10 @@ bool popEvolve() {
 
 
 //s/l = sequence that sorts x using exchanges (SWAP_k(i,j) is s[2*k]<->s[2*k+1])
-void randss(int* s, int& l, int* x) {
+//f is used to bound the insertions chain (it will be long l=ceil(f*original_l))
+void randss(int* s, int& l, int* x, double f) {
    //some variables
-   int i,nc,vc,nv,nexc,r,e,p1,p2,t,lc1,lc2;
+   int i,nc,vc,nv,nexc,r,e,p1,p2,t,lc1,lc2,lim; //lim used in limited version
    static bool* v = (bool*)(tmpint+n); //alive with x,c,lc (reuse part of s not used by x)
    static int* lc = tmpint+(2*n);      //alive with x,s,c,v (memory just after v)
    static int* c = tmpint+(3*n);       //alive with x,v,c,lc (last chunk of memory of size n^2)
@@ -476,10 +477,13 @@ void randss(int* s, int& l, int* x) {
       - does not sort x
       - COST: O(n^2)
    */
-   //initialize decomposition length to 0 (it will be n-nc at the end)
+   //initialize decomposition length to 0 (it will be n-nc at the end, but in lim. version f*(n-nc))
    l = 0;
+   //compute limit for limited version
+   lim = f*(n-nc) + .5; //ceil rounding
    //loop until there are n cycles of length 1
-   while (vc>0) {
+   //while (vc>0) { //same as "while (l<n-nc)"  //version without limit
+   while (l<lim) {                              //version with limit
 #ifdef MYDEBUG
       int debugSum = 0;
       for (int debugi=0; debugi<vc; debugi++)
@@ -560,8 +564,8 @@ void randss(int* s, int& l, int* x) {
       } //end-cases
    } //end-while
 #ifdef MYDEBUG
-   if (l!=n-nc) {
-      cout << "in randss l does not match n-nc" << endl;
+   if (l!=lim) { //limited version (prima era l!=n-nc)
+      cout << "in randss l does not match lim" << endl;
       exit(1);
    }
 #endif
@@ -579,6 +583,8 @@ void diffMutation(int i) { //EXCHANGES!!!
    static int* ix1dotx2 = tmpint; //tempmem (n) alive with ss so ix1dotx2 DESTROYED ON RANDSS //EXCHANGES!!!
    //get 3 different indexes r0,r1,r2 different also from i
    threeRandIndicesDiffFrom(np,i,r0,r1,r2);
+   //compute scale factor and truncation bound using jde rule (need before randss for limit version)
+   sfy[i] = urand()<.1 ? .1+.9*urandi() : sfx[i];
    //x[r1]-x[r2] = x[r2]^-1*x[r1] = sort_seq.(x[r1]^-1*x[r2]) in 2 steps (I already know x[r1]^-1=ix[r1]):
    //(1) ix1dotx2 = ix1 * x[r2]
    ix1 = ix[r1];
@@ -591,13 +597,13 @@ void diffMutation(int i) { //EXCHANGES!!!
       exit(1);
    }
 #endif
-   //(2) ss,lss = randss(ix1dotx2)
-#ifdef MYDEBUG
+   //(2) ss,lss = randss(ix1dotx2) using limited version (sfy[i])
+/*#ifdef MYDEBUG
    static int* debugx = new int[n];
    memcpy(debugx,ix1dotx2,sizeof(int)*n);
-#endif
-   randss(ss,lss,ix1dotx2);
-#ifdef MYDEBUG
+#endif*/
+   randss(ss,lss,ix1dotx2,sfy[i]);
+/*#ifdef MYDEBUG
    for (int debugi=0; debugi<2*lss; debugi+=2) {
       int debugi1 = ss[debugi];
       int debugi2 = ss[debugi+1];
@@ -610,15 +616,13 @@ void diffMutation(int i) { //EXCHANGES!!!
          cout << "randss does not sort" << endl;
          exit(1);
       }
-#endif
-   //compute scale factor and truncation bound using jde rule
-   sfy[i] = urand()<.1 ? .1+.9*urandi() : sfx[i];
-   k = sfy[i] * lss + .5; //ceil rounding
+#endif*/
    //apply the inverse of the first k insertions in ss to x[r0] and put the result in y1[i]
+   //all the exchanges in ss, since we are using limited version of randss
    p = y1[i];
    memcpy(p,x[r0],permByteSize);
    pt = ss; //... since ss is a static variable
-   for (j=0; j<k; j++) { //ss is a sorting sequence, so "inversion happened automatically"
+   for (j=0; j<lss; j++) { //ss is a sorting sequence, so "inversion happened automatically"
       exci = *pt++;
       excj = *pt++;
       t = p[exci];

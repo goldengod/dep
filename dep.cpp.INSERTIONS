@@ -135,7 +135,7 @@ inline bool termination();
 void popInit();
 bool popEvolve();
 //inline void randis(int* d, int& l, int* x);   //INSERTIONS!!! //old decomposition version
-inline void randis(int* s, int& l, int* x);     //INSERTIONS!!! //new sorting version
+inline void randis(int* s, int& l, int* x, double f=1.0);     //INSERTIONS!!! //new sorting version (LIMITS)
 void diffMutation(int i);
 inline void tpii(int* ch, int* fa, int* mo, int* ifa, int c1, int c2);
 void crossover(int i);
@@ -410,7 +410,8 @@ bool popEvolve() {
 
 //NEW SORTING VERSION!!!
 //s/l = sequence that sorts x using insertions (INS_k(i,j) is s[2*k]<->s[2*k+1])
-void randis(int* s, int& l, int* x) {
+//f is used to bound the insertions chain (it will be long l=ceil(f*original_l))
+void randis(int* s, int& l, int* x, double f) {
    //variables
    int i,j,k,y,a,b,m,ql,ll,ul,jmin,jmax,ind,w;
    //initialize working memory (note that s is tmpint and take 2*n space)
@@ -528,11 +529,13 @@ void randis(int* s, int& l, int* x) {
       COST: O(n^2)
    */
    //decomposition d has length equal to initial u length
-   l = ul;
+   //l = ul;      //version without limit
+   l = f*ul + .5; //version with limit
    //initialize s true length
    w = 0;
    //while the lis length is less than N increase it and perform bookkeeping
-   while (ll<n) {
+   //while (ll<n) { //same as "while (w<l)"  //version without limit
+   while (w<l) {                             //version with limit
       //select and remove a random index i from u (note that ul is decremented)
       k = irand(ul);
       i = u[k];
@@ -617,6 +620,8 @@ void diffMutation(int i) { //INSERTIONS!!!
    static int* ix1dotx2 = tmpint+4*n; //use the last chunk of temp memory
    //get 3 different indexes r0,r1,r2 different also from i
    threeRandIndicesDiffFrom(np,i,r0,r1,r2);
+   //compute scale factor and truncation bound using jde rule (need before randis for limit version)
+   sfy[i] = urand()<.1 ? .1+.9*urandi() : sfx[i];
    //x[r1]-x[r2] = x[r2]^-1*x[r1] = sort_seq.(x[r1]^-1*x[r2]) in 2 steps (I already know x[r1]^-1=ix[r1]):
    //(1) ix1dotx2 = ix1 * x[r2]
    ix1 = ix[r1];
@@ -629,16 +634,14 @@ void diffMutation(int i) { //INSERTIONS!!!
       exit(1);
    }
 #endif
-   //(2) ss,lss = randis(ix1dotx2)
-   randis(ss,lss,ix1dotx2);
-   //compute scale factor and truncation bound using jde rule
-   sfy[i] = urand()<.1 ? .1+.9*urandi() : sfx[i];
-   k = sfy[i] * lss + .5; //ceil rounding
-   //apply the inverse of the first k insertions in ss to x[r0] and put the result in y1[i]
+   //(2) ss,lss = randis(ix1dotx2) using limited version (sfy[i])
+   randis(ss,lss,ix1dotx2,sfy[i]);
+   //apply the inverse of the insertions in ss to x[r0] and put the result in y1[i]
+   //all the insertions in ss, since we are using limited version of randis
    p = y1[i];
    memcpy(p,x[r0],permByteSize);
    pt = ss; //... since ss is a static variable
-   for (j=0; j<k; j++) { //ss is a sorting sequence, so "inversion happened automatically"
+   for (j=0; j<lss; j++) { //ss is a sorting sequence, so "inversion happened automatically"
       insi = *pt++;
       insj = *pt++;
       ins(p,insi,insj);
@@ -648,7 +651,7 @@ void diffMutation(int i) { //INSERTIONS!!!
       cout<<"diffMutation y1["<<i<<"]"<<endl;
       exit(1);
    }
-#endif   
+#endif
    //done
 }
 
