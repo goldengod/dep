@@ -23,5 +23,14 @@ int discardLine(FILE* f);
 //print a permutation to standard output
 void printPerm(int* p, int n);
 
+//insertion sort algorithm that sort a basing on the values in v
+void insertionSortWithValues(int* a, int l, int* v);
+
+//check if an array is sorted basing on the values in v
+bool isSortedWithValues(int* a, int l, int* v);
+
+//check if an array is sorted
+bool isSorted(int* a, int l);
+
 #endif
 

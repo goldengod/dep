@@ -41,7 +41,8 @@ it contains the code for the "random individual" mutation
 it contains the code for the "completely random" mutation
 
 5) dep.cpp.INSERTIONS
-introduced on date 03-11-2015. Final version on date 16-11-2015. It is like (1) but it uses insertions as generators and randomized insertion sort
+introduced on date 03-11-2015. Final version on date 10-12-2015. It is like (1) but it uses insertions as generators and randomized insertion sort
+there is also the variant "dep.cpp.INSERTIONS_FASTER_LESS_ENTROPY" that it is a bit faster (though asymptotically the same") but it has "less entropy" on the produced decomposition
 
 6) dep.cpp.EXCHANGES
 introduced on date 19-11-2015. It is like (1) but it uses exchanges as generators and randomized (and generalized) selection sort
@@ -58,5 +59,6 @@ v1.02 - uploaded the 16 nov 2015 - sorting sequence (instead of decomposition) o
 v1.03 - uploaded the 19 nov 2015 - differential mutation with exchanges' generators added (dep.cpp.EXCHANGES)
 v1.04 - uploaded the 24 nov 2015 - limited/bounded version for randis,randss (dep.cpp.INSERTIONS,dep.cpp.EXCHANCES)
 v1.05 - uploaded the 24 nov 2015 - bug fix = there was rounding instead of ceil on the diffMutations (dep.cpp.ORIGINAL,dep.cpp.INSERTIONS,dep.cpp.EXCHANGES,dep.cpp)
+v1.06 - uploaded the 10 dec 2015 - more entropy on dep.cpp.INSERTIONS (previous version is now in dep.cpp.INSERTIONS_FASTER_LESS_ENTROPY)
 
 

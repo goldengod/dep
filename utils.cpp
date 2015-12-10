@@ -85,3 +85,30 @@ void printPerm(int* p, int n) {
    cout << endl;
 }
 
+
+void insertionSortWithValues(int* a, int l, int* v) {
+   //https://en.wikibooks.org/wiki/Algorithm_Implementation/Sorting/Insertion_sort
+   int i,j,t;
+   for(i=1; i<l; i++) {
+      t = a[i];
+      for (j=i-1; j>=0 && v[a[j]]>v[t]; j--)
+         a[j+1] = a[j];
+      a[j+1] = t;
+   }
+}
+
+
+bool isSortedWithValues(int* a, int l, int* v) {
+   for (int i=1; i<l; i++)
+      if (v[a[i-1]]>v[a[i]])
+         return false;
+   return true;
+}
+
+bool isSorted(int* a, int l) {
+   for (int i=1; i<l; i++)
+      if (a[i-1]>a[i])
+         return false;
+   return true;
+}
+
