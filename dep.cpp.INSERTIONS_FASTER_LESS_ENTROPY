@@ -33,6 +33,10 @@ int ls;
 //frfactor definition (declared in dep.h)
 double frfactor;
 
+//min/max value definitions for scale factor f (used by jde rule and declared in dep.h)
+double minf;
+double maxf;
+
 //global best definition (declared in dep.h)
 int* gbest;
 int fgbest;
@@ -177,6 +181,8 @@ void depDefaultParameters() {
    heu = 0; //sarebbe 1 ma metto 0 perche' devo passare il file euristica al main
    ls = B_LS;
    frfactor = 0.25;
+   minf = 0.1; //as standard jde rule
+   maxf = 1.0; //as standard jde rule
 #endif
 #ifdef MAKESPAN
    np = 20;
@@ -185,6 +191,8 @@ void depDefaultParameters() {
    heu = 0; //sarebbe 1 ma metto 0 perche' devo passare il file euristica al main
    ls = L_LS;
    frfactor = 0.25;
+   minf = 0.1; //as standard jde rule
+   maxf = 1.0; //as standard jde rule
 #endif
 }
 
@@ -625,7 +633,7 @@ void diffMutation(int i) { //INSERTIONS!!!
    //get 3 different indexes r0,r1,r2 different also from i
    threeRandIndicesDiffFrom(np,i,r0,r1,r2);
    //compute scale factor and truncation bound using jde rule (need before randis for limit version)
-   sfy[i] = urand()<.1 ? .1+.9*urandi() : sfx[i];
+   sfy[i] = urand()<.1 ? minf+(maxf-minf)*urandi() : sfx[i];
    //x[r1]-x[r2] = x[r2]^-1*x[r1] = sort_seq.(x[r1]^-1*x[r2]) in 2 steps (I already know x[r1]^-1=ix[r1]):
    //(1) ix1dotx2 = ix1 * x[r2]
    ix1 = ix[r1];

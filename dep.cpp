@@ -33,6 +33,10 @@ int ls;
 //frfactor definition (declared in dep.h)
 double frfactor;
 
+//min/max value definitions for scale factor f (used by jde rule and declared in dep.h)
+double minf;
+double maxf;
+
 //global best definition (declared in dep.h)
 int* gbest;
 int fgbest;
@@ -118,6 +122,9 @@ static unsigned long savedTime = 0; //for time save/resume scheme see save_resum
 static int nfesWhenToForceRestart;
 static int forcedRestartPeriod;
 
+//inner variable for diameter
+static int diameter;
+
 
 #ifdef GFC
 //Branchless min between x and y, bits has to be sizeof(int)*8-1 (see http://aggregate.org/MAGIC)
@@ -176,6 +183,8 @@ void depDefaultParameters() {
    heu = 0; //sarebbe 1 ma metto 0 perche' devo passare il file euristica al main
    ls = B_LS;
    frfactor = 0.25;
+   minf = 0.1; //as standard jde rule
+   maxf = 1.0; //as standard jde rule
 #endif
 #ifdef MAKESPAN
    np = 20;
@@ -184,6 +193,8 @@ void depDefaultParameters() {
    heu = 0; //sarebbe 1 ma metto 0 perche' devo passare il file euristica al main
    ls = L_LS;
    frfactor = 0.25;
+   minf = 0.1; //as standard jde rule
+   maxf = 1.0; //as standard jde rule
 #endif
 }
 
@@ -263,6 +274,8 @@ void depAlloc() {
    memset(lsHistory,0,permByteSize); //all zeros
    //init to false the save flag
    haveToSave = false;
+   //init the diameter
+   diameter = n*(n-1)/2; //VALID FOR ADJACENT SWAPS!!!
    //done
 }
 
@@ -442,49 +455,122 @@ inline void randbs(int* s, int& l, int* x, int* ainv, int nainv) {
 //differential mutation of individual i
 void diffMutation(int i) {
    //DE/rand/1: y1[i] = x[r0] + F * (x[r1] - x[r2])
-   //initialize variables
-   int r0,r1,r2,t,k,j,w,*p,*ix1,*pt;
-   double tempDouble; //temp variable for ceil rounding
+   //(0) initialize variables
+   int r0,r1,r2,t,k,j,w,*p,*ixx,*pt,*pp,*p0;
+   double tempDouble;                           //temp variable for ceil rounding
    static int* ss = tmpint;                     //use the temp memory (sorting sequence)
-   static int* ix1dotx2 = tmpint+(n*(n-1)/2);   //use the temp memory
-   static int* ainv = ix1dotx2+n;               //use the temp memory
-   //get 3 different indexes r0,r1,r2 different also from i
+   static int* z = tmpint+(n*(n-1)/2);          //use the temp memory (just at right of ss)
+   static int* ainv = z+n;                      //use the temp memory (just at right of z)
+   //(1) get 3 different indexes r0,r1,r2 different also from i
    threeRandIndicesDiffFrom(np,i,r0,r1,r2);
-   //x[r1]-x[r2] = x[r2]^-1*x[r1] = sort_seq.(x[r1]^-1*x[r2]) in 2 steps (I already know x[r1]^-1=ix[r1]):
-   //(1) ix1dotx2 = ix1 * x[r2] and simultaneously compute its adjacent inversions (ainv)
-   ix1 = ix[r1];
-   p = x[r2];
-   *ix1dotx2 = ix1[*p]; //first outside the for ... it's the same of (ix1dotx2[0] = ix1[p[0]])
-   k = 0; //no. of adjacent inversions
-   pt = ainv; // ... since ainv is static
-   for (j=1; j<n; j++) { //from the second to the last inside the for (so the if is ok)
-      ix1dotx2[j] = ix1[*++p]; //... ix1[*++p] is the same of ix1[p[j]]
-      if (ix1dotx2[j-1]>ix1dotx2[j]) {
-         *pt++ = j-1; // ... with the next line, the same of ainv[k++]=j-1;
-         k++; //... with the prevline, the same of ainv[k++]=j-1;
-      }
-   }
+   //(2) compute scale factor using jde rule
+   sfy[i] = urand()<.1 ? minf+(maxf-minf)*urandi() : sfx[i];
+   //(3) check and handle the easy case F=1
+   if (sfy[i]==1.) {
+      //begin case F=1
+      //compute y1[i] = x[r0] + (x[r1] - x[r2]) = x[r0] * x[r2]^-1 * x[r1]
+      p = y1[i];
+      p0 = x[r0];
+      ixx = ix[r2];
+      pp = x[r1];
+      for (j=0; j<n; j++)
+         p[j] = p0[ixx[pp[j]]];
 #ifdef MYDEBUG
-   if (!permValid(ix1dotx2,n)) {
-      cout<<"diffMutation ix1dotx2"<<endl;
-      exit(1);
-   }
+      int myp[n];
+      for (j=0; j<n; j++)
+         myp[j] = x[r0][ix[r2][x[r1][j]]];
+      for (j=0; j<n; j++)
+         if (y1[i][j]!=myp[j]) {
+            cout << "Problem with the case F=1" << endl;
+            exit(1);
+         }
 #endif
-   //(2) ss,w = sort_sequence(ix1dotx2) using randbs sorting loop
-   randbs(ss,w,ix1dotx2,ainv,k);
-   //compute scale factor and truncation bound using jde rule
-   sfy[i] = urand()<.1 ? .1+.9*urandi() : sfx[i];
-   //k = sfy[i] * w + .5; //ceil rounding    //THERE WAS A BUG (old version is rounding, not ceil rounding)
-   k = tempDouble = sfy[i] * w;     //ceil rounding ok
-   if (k<tempDouble)                //ceil rounding ok
-      k++;                          //ceil rounding ok
-   //apply the first k entries of ss to x[r0] and put the result in y1[i]
+      //nothing else to do (this is an easy case) so return
+      return;
+      //end case F=1
+   }
+   //(4) distinguish the 2 cases F<1 and F>1
+   if (sfy[i]<1.) {
+      //begin case F<1: build z with its adjacent inversions, randbs on z, compute k, compute starting y
+      //(5a) build z with its adjacent inversions ainv/k (k is #ainv)
+      //x[r1]-x[r2] = x[r2]^-1*x[r1] = sort_seq(x[r1]^-1*x[r2]) in 2 steps (I already know x[r1]^-1=ix[r1])
+      ixx = ix[r1];
+      p = x[r2];
+      *z = ixx[*p];           //first outside the for ... it's the same of "z[0] = ixx[p[0]]"
+      k = 0;                  //init no. of adjacent inversions
+      pt = ainv;              //due because ainv is static
+      for (j=1; j<n; j++) {   //from the second to the last inside the for (so the if is ok)
+         z[j] = ixx[*++p];    //"ixx[*++p]" is the same of "ixx[p[j]]"
+         if (z[j-1]>z[j]) {
+            *pt++ = j-1;      //considering also next line, it is the same of "ainv[k++]=j-1"
+            k++;
+         }
+      }
+      //(6a) ss,w = sort_sequence(z) using randbs sorting loop
+      randbs(ss,w,z,ainv,k);
+      //(7a) compute k, i.e. where to truncate ss, basing on w and sfy[i] and using ceil rounding
+      k = tempDouble = sfy[i] * w;  //tempDouble needed to implement ceil rounding
+      if (k<tempDouble)             //this is to implement ceil rounding
+         k++;
+      //(8a) compute starting y: y1[i] becomes a copy of x[r0]
+      memcpy(y1[i],x[r0],permByteSize);
+      //end case F<1
+   } else {
+      //begin case F>1: build z with its adjacent inversions, compute starting y, randbs on z, compute k
+      //(5b) build z with its adjacent inversions ainv/k (k is #ainv)
+      //DEC(R) = SORT(E->X) + SORT(X->R) = X + SORT(X->R) = X + SORT(R^-1*X) = X + SORT(R*X)
+      //      thus the z to sort has to be R*(x[r1]-x[r2]) = R * x[r2]^-1 * x[r1]
+      //      note: the multiplication at left by R can be simulated, i.e. (R*X)[i] = R[X[i]] = n-1-X[i]
+      //(8b - anticipated) together compute also starting y, i.e. x[r0] * x[r2]^-1 * x[r1]
+      ixx = ix[r2];
+      p = x[r1];
+      *z = n-1-ixx[*p];       //first outside the for ... it's the same of "z[0] = n-1-ixx[p[0]]"
+      p0 = x[r0];             //for starting y (8b)
+      pp = y1[i];             //for starting y (8b)
+      *pp = p0[ixx[*p]];      //for starting y (8b), 1st outside for, equal to y1[i][0]=x[r0][ixx[x[r1][0]]]
+      k = 0;                  //init no. of adjacent inversions
+      pt = ainv;              //due because ainv is static
+      for (j=1; j<n; j++) {   //from the second to the last inside the for (so the if is ok)
+         z[j] = n-1-ixx[*++p];//"ixx[*++p]" is the same of "ixx[p[j]]"
+         pp[j] = p0[ixx[*p]]; //for starting y (8b), equal to "y1[i][j] = x[r0][ixx[x[r1][j]]]"
+         if (z[j-1]>z[j]) {
+            *pt++ = j-1;      //considering also next line, it is the same of "ainv[k++]=j-1"
+            k++;
+         }
+      }
+      //(6b) ss,w = sort_sequence(z) using randbs sorting loop
+      randbs(ss,w,z,ainv,k);
+#ifdef MYDEBUG
+      //since k was set to diameter, I have to check that "x[r2]^-1 * x[r1] * ss = reverse_identity"
+      int myp[n];
+      for (j=0; j<n; j++)
+         myp[j] = ix[r2][x[r1][j]];
+      for (j=0; j<w; j++) {
+         t = myp[ss[j]];
+         myp[ss[j]] = myp[ss[j]+1];
+         myp[ss[j]+1] = t;
+      }
+      for (j=0; j<n; j++)
+         if (myp[j]!=n-1-j) {
+            cout << "Problem with case F>1" << endl;
+            exit(1);
+         }
+#endif
+      //(8b) compute k, i.e. where to truncate ss, basing on w and sfy[i] and using ceil rounding
+      //in this case (F>1): k = min { ceil(F*(D-W)), D }
+      k = tempDouble = sfy[i]*(diameter-w);  //tempDouble needed to implement ceil rounding
+      if (k<tempDouble)                      //this is to implement ceil rounding
+         k++;
+      if (k>diameter)                        //this is the minimum part of the formula above
+         k = diameter;
+      //end case F>1
+   }
+   //(9) apply the first k entries of ss to y1[i]
    p = y1[i];
-   memcpy(p,x[r0],permByteSize);
-   pt = ss; //... since ss is a static variable
+   pt = ss;             //due beecause ss is a static variable
    for (j=0; j<k; j++) {
-      w = *pt++; //... *pt++ is the same of ss[j]
-      t = p[w];
+      w = *pt++;        //"*pt++" is the same of "ss[j]"
+      t = p[w];         //this line and the next two implement the adjacent swap
       p[w] = p[w+1];
       p[w+1] = t;
    }
@@ -493,7 +579,7 @@ void diffMutation(int i) {
       cout<<"diffMutation y1["<<i<<"]"<<endl;
       exit(1);
    }
-#endif
+#endif   
    //done
 }
 

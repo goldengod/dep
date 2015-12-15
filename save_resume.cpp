@@ -63,11 +63,19 @@ void depSave() {
    for (j=0; j<sizeof(double); j++)
       fprintf(fsav,"%u ",bytes[j]);
    fprintf(fsav,"\n");
+   bytes = (unsigned char*)&minf;            //minf 10bis
+   for (j=0; j<sizeof(double); j++)
+      fprintf(fsav,"%u ",bytes[j]);
+   fprintf(fsav,"\n");
+   bytes = (unsigned char*)&maxf;            //maxf 10tris
+   for (j=0; j<sizeof(double); j++)
+      fprintf(fsav,"%u ",bytes[j]);
+   fprintf(fsav,"\n");   
    bytes = (unsigned char*)&alpha;           //alpha 11
    for (j=0; j<sizeof(double); j++)
       fprintf(fsav,"%u ",bytes[j]);
    fprintf(fsav,"\n");
-   fprintf(fsav,"%d\n",heu);                  //heu 12
+   fprintf(fsav,"%d\n",heu);                 //heu 12
    fprintf(fsav,"%d\n",ls);                  //ls 13
    bytes = (unsigned char*)&frfactor;        //frfactor 14
    for (j=0; j<sizeof(double); j++)
@@ -229,6 +237,16 @@ void depLoad(char* filename) {
    //values of dep.h (extern ones but only input)  - ALREADY READ BUT I HAVE TO SKIP
    nowarning = fscanf(fsav,"%d",&np);                    //np 9
    bytes = (unsigned char*)&finit;                       //finit 10
+   for (j=0; j<sizeof(double); j++) {
+      nowarning = fscanf(fsav,"%u",&b);
+      bytes[j] = (unsigned char)b;
+   }
+   bytes = (unsigned char*)&minf;                        //minf 10bis
+   for (j=0; j<sizeof(double); j++) {
+      nowarning = fscanf(fsav,"%u",&b);
+      bytes[j] = (unsigned char)b;
+   }
+   bytes = (unsigned char*)&maxf;                        //maxf 10tris
    for (j=0; j<sizeof(double); j++) {
       nowarning = fscanf(fsav,"%u",&b);
       bytes[j] = (unsigned char)b;

@@ -21,6 +21,10 @@ extern int ls; //0 (no ls), 1 (baldwinian ls), 2 (lamarckian ls)
 //forced restart factor (0,1+) - restart forced if no gbest update for maxnfes*frfactor nfes
 extern double frfactor;
 
+//min/max values for scale factor f (used by jde rule)
+extern double minf;
+extern double maxf;
+
 //global best declaration
 extern int* gbest;
 extern int fgbest;

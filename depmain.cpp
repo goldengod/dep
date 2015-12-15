@@ -81,6 +81,8 @@ int main(int argc, char** argv) {
    cout << " -            seed = " << seed << endl;
    cout << " -              np = " << np << endl;
    cout << " -           finit = " << finit << endl;
+   cout << " -            minf = " << minf << endl;
+   cout << " -            maxf = " << maxf << endl;
    cout << " -           alpha = " << alpha << endl;
    cout << " -             heu = " << heu << endl;
    cout << " -              ls = " << ls << " ";
@@ -165,6 +167,9 @@ void usage() {
    cout << "    [--maxnfes INT]" << endl;
    cout << "    [--np INT]" << endl;
    cout << "    [--finit DOUBLE]" << endl;
+   cout << "    [--minf DOUBLE]" << endl; //minimum value for f
+   cout << "    [--maxf DOUBLE]" << endl; //maximum value for f
+   cout << "    [--f DOUBLE] (if you set this value, please don't set --minf and --maxf)" << endl;
    cout << "    [--alpha DOUBLE]" << endl;
    cout << "    [--heu STRING(filename)]" << endl;
    cout << "    [--ls 0(N_LS)/1(B_LS)/2(L_LS)]" << endl;
@@ -226,6 +231,16 @@ void readArguments(int argc, char** argv) {
          } else if (strcmp(argv[i],"--frfactor")==0) {
             frfactor = atof(argv[i+1]);
             i += 2;
+         } else if (strcmp(argv[i],"--minf")==0) {
+            minf = atof(argv[i+1]);
+            i += 2;
+         } else if (strcmp(argv[i],"--maxf")==0) {
+            maxf = atof(argv[i+1]);
+            i += 2;
+         } else if (strcmp(argv[i],"--f")==0) {
+            //subtle way to set a fixed F parameter
+            minf = maxf = atof(argv[i+1]);
+            i += 2;
          } else if (strcmp(argv[i],"--save")==0) {
             sscanf(argv[i+1],"%u",&saveSeconds);
             if (i+2<argc && argv[i+2][0]!='-') {
@@ -257,25 +272,29 @@ void writeResults() {
    FILE* f = fopen(out,"r");
    if (!f) {
       f = fopen(out,"w");
-      fprintf(f,"exe,instance,n,m,maxnfes,seed,np,finit,alpha,heu,ls,frfactor"); //input
+      fprintf(f,"exe,instance,n,m,maxnfes,seed,np,finit,minf,maxf,alpha,heu,ls,frfactor"); //input
       fprintf(f,",fgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,improvingSteps,lsImprovingSteps,execTime,minStageLength,maxStageLength,avgStageLength,improvingStages,nls,nfesls,nImprovingls,totImprovingls,gbestls,gbest\n"); //output
    }
    fclose(f);
    //write this csv line in append
    char sgbest[PERMSTR_SIZE];
    char sfinit[32];
+   char sminf[32];
+   char smaxf[32];
    char salpha[32];
    char sfrfactor[32];
    char savgStageLength[32];
    perm2str(gbest,n,sgbest);
    double2str(finit,sfinit);
+   double2str(minf,sminf);
+   double2str(maxf,smaxf);
    double2str(alpha,salpha);
    double2str(frfactor,sfrfactor);
    double2str(avgStageLength,savgStageLength);
    f = fopen(out,"a");
    //input print
-   fprintf(f,"%s,%s,%d,%d,%d,%u,%d,%s,%s,%d,%d,%s",
-             exe,instance,n,m,maxnfes,seed,np,sfinit,salpha,heu,ls,sfrfactor);
+   fprintf(f,"%s,%s,%d,%d,%d,%u,%d,%s,%s,%s,%s,%d,%d,%s",
+             exe,instance,n,m,maxnfes,seed,np,sfinit,sminf,smaxf,salpha,heu,ls,sfrfactor);
    //output print
    fprintf(f,",%d,%d,%d,%d,%d,%d,%d,%d,%d,%lu,%d,%d,%s,%d,%d,%d,%d,%d,%d,%s\n",
            fgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,
@@ -344,12 +363,22 @@ void preResume(char* filename) {
       nowarning = fscanf(fsav,"%u",&b);
       bytes[j] = (unsigned char)b;
    }
+   bytes = (unsigned char*)&minf;                        //minf 10bis
+   for (j=0; j<sizeof(double); j++) {
+      nowarning = fscanf(fsav,"%u",&b);
+      bytes[j] = (unsigned char)b;
+   }
+   bytes = (unsigned char*)&maxf;                        //maxf 10tris
+   for (j=0; j<sizeof(double); j++) {
+      nowarning = fscanf(fsav,"%u",&b);
+      bytes[j] = (unsigned char)b;
+   }   
    bytes = (unsigned char*)&alpha;                       //alpha 11
    for (j=0; j<sizeof(double); j++) {
       nowarning = fscanf(fsav,"%u",&b);
       bytes[j] = (unsigned char)b;
    }
-   nowarning = fscanf(fsav,"%d",&heu);                    //heu 12
+   nowarning = fscanf(fsav,"%d",&heu);                   //heu 12
    nowarning = fscanf(fsav,"%d",&ls);                    //ls 13
    bytes = (unsigned char*)&frfactor;                    //frfactor 14
    for (j=0; j<sizeof(double); j++) {
