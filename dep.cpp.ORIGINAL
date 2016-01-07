@@ -13,7 +13,6 @@ using namespace std;
 
 #ifdef MYDEBUG
 #include "utils.h"
-#include <cstdlib>
 #endif
 
 
@@ -461,6 +460,7 @@ void diffMutation(int i) {
    static int* ss = tmpint;                     //use the temp memory (sorting sequence)
    static int* z = tmpint+(n*(n-1)/2);          //use the temp memory (just at right of ss)
    static int* ainv = z+n;                      //use the temp memory (just at right of z)
+//int mydebug;//debug
    //(1) get 3 different indexes r0,r1,r2 different also from i
    threeRandIndicesDiffFrom(np,i,r0,r1,r2);
    //(2) compute scale factor using jde rule
@@ -493,7 +493,7 @@ void diffMutation(int i) {
    if (sfy[i]<1.) {
       //begin case F<1: build z with its adjacent inversions, randbs on z, compute k, compute starting y
       //(5a) build z with its adjacent inversions ainv/k (k is #ainv)
-      //x[r1]-x[r2] = x[r2]^-1*x[r1] = sort_seq(x[r1]^-1*x[r2]) in 2 steps (I already know x[r1]^-1=ix[r1])
+      //z = x[r1]-x[r2] = x[r2]^-1*x[r1] = sort_seq(x[r1]^-1*x[r2]) (I already know x[r1]^-1=ix[r1])
       ixx = ix[r1];
       p = x[r2];
       *z = ixx[*p];           //first outside the for ... it's the same of "z[0] = ixx[p[0]]"
@@ -541,7 +541,7 @@ void diffMutation(int i) {
       //(6b) ss,w = sort_sequence(z) using randbs sorting loop
       randbs(ss,w,z,ainv,k);
 #ifdef MYDEBUG
-      //since k was set to diameter, I have to check that "x[r2]^-1 * x[r1] * ss = reverse_identity"
+      //I have to check that "x[r2]^-1 * x[r1] * ss = reverse_identity"
       int myp[n];
       for (j=0; j<n; j++)
          myp[j] = ix[r2][x[r1][j]];
@@ -557,12 +557,20 @@ void diffMutation(int i) {
          }
 #endif
       //(8b) compute k, i.e. where to truncate ss, basing on w and sfy[i] and using ceil rounding
-      //in this case (F>1): k = min { ceil(F*(D-W)), D }
+      //in this case (F>1), L=D-W, K = min{ceil(F*L),D}-L = min{ceil(F*(D-W)),D}-D+W
       k = tempDouble = sfy[i]*(diameter-w);  //tempDouble needed to implement ceil rounding
       if (k<tempDouble)                      //this is to implement ceil rounding
          k++;
       if (k>diameter)                        //this is the minimum part of the formula above
          k = diameter;
+      k += w - diameter;                     //this is the last "-D+W" part
+//mydebug=w;//debug
+#ifdef MYDEBUG
+      if (k<0 || k>w) {
+         cout << "k is not ok in the case F>1" << endl;
+         exit(1);
+      }
+#endif
       //end case F>1
    }
    //(9) apply the first k entries of ss to y1[i]
@@ -579,7 +587,45 @@ void diffMutation(int i) {
       cout<<"diffMutation y1["<<i<<"]"<<endl;
       exit(1);
    }
-#endif   
+   //to check the following please uncomment the two lines with the variable "mydebug" above
+   //check the correct number of generators
+   //int myz[n];    //put x[r1]^-1 * x[r2] in myz
+   //for (j=0; j<n; j++)
+   //   myz[j] = ix[r1][x[r2][j]];
+   //int myai[n];   //put the adj. inv. of myz in myai
+   //int mynai = 0;
+   //for (j=1; j<n; j++)
+   //   if (myz[j-1]>myz[j])
+   //      myai[mynai++] = j-1;
+   //int myss[n*n]; //put the sort. seq. of myz in myss
+   //int mylss;
+   //randbs(myss,mylss,myz,myai,mynai);
+   //int mygen;     //compute the no. of generators to check
+   //double mytd;
+   //mygen = mytd = sfy[i]*mylss;
+   //if (mygen<mytd)
+   //   mygen++;
+   //if (sfy[i]<1.) { //check if everything ok - case f<1
+   //   if (k!=mygen) {
+   //      cout << "Number of generators mismatch when F<1" << endl;
+   //      exit(1);
+   //   }
+   //} else {       //check if everything ok - case f>1
+   //   //L=D-W, K = min{ceil(F*L),D}-L = min{ceil(F*(D-W)),D}-D+W
+   //   if (mygen>diameter)
+   //      mygen = diameter;
+   //   int myl2 = mydebug; //length of 2nd part
+   //   int myl1 = diameter-myl2; //length of 1st part
+   //   if (myl1!=mylss) {
+   //      cout << "Problem with lengths when F>1" << endl;
+   //      exit(1);
+   //   }
+   //   if (mylss+k!=mygen) {
+   //      cout << "Number of generators mismatch when F>1" << endl;
+   //      exit(1);
+   //   }
+   //}
+#endif
    //done
 }
 

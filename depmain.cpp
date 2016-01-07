@@ -169,7 +169,7 @@ void usage() {
    cout << "    [--finit DOUBLE]" << endl;
    cout << "    [--minf DOUBLE]" << endl; //minimum value for f
    cout << "    [--maxf DOUBLE]" << endl; //maximum value for f
-   cout << "    [--f DOUBLE] (if you set this value, please don't set --minf and --maxf)" << endl;
+   cout << "    [--f DOUBLE] (if you set this value, please don't set --minf, --maxf, and --finit)" << endl;
    cout << "    [--alpha DOUBLE]" << endl;
    cout << "    [--heu STRING(filename)]" << endl;
    cout << "    [--ls 0(N_LS)/1(B_LS)/2(L_LS)]" << endl;
@@ -239,7 +239,7 @@ void readArguments(int argc, char** argv) {
             i += 2;
          } else if (strcmp(argv[i],"--f")==0) {
             //subtle way to set a fixed F parameter
-            minf = maxf = atof(argv[i+1]);
+            finit = minf = maxf = atof(argv[i+1]);
             i += 2;
          } else if (strcmp(argv[i],"--save")==0) {
             sscanf(argv[i+1],"%u",&saveSeconds);

@@ -79,9 +79,10 @@ int discardLine(FILE* f) {
 }
 
 
+#include <iomanip>//Debug
 void printPerm(int* p, int n) {
    for (int i=0; i<n; i++)
-      cout << p[i] << " ";
+      cout << setw(2) << p[i] << ",";//debug
    cout << endl;
 }
 

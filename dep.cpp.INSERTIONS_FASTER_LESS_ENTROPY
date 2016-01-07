@@ -122,6 +122,9 @@ static unsigned long savedTime = 0; //for time save/resume scheme see save_resum
 static int nfesWhenToForceRestart;
 static int forcedRestartPeriod;
 
+//inner variable for diameter
+static int diameter;
+
 
 #ifdef GFC
 //Branchless min between x and y, bits has to be sizeof(int)*8-1 (see http://aggregate.org/MAGIC)
@@ -272,6 +275,13 @@ void depAlloc() {
    memset(lsHistory,0,permByteSize); //all zeros
    //init to false the save flag
    haveToSave = false;
+   //init the diameter
+   diameter = n-1; //VALID FOR INSERTIONS!!!
+   //check if f is greater than 1 and print error
+   if (finit>1.0 || minf>1.0 || maxf>1.0) {
+      cerr << "FINIT, MINF, MAXF HAS TO BE <= 1.0 FOR INSERTIONS!!!" << endl;
+      exit(EXIT_FAILURE);
+   }
    //done
 }
 

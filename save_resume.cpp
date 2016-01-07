@@ -144,6 +144,7 @@ void depSave() {
    fprintf(fsav,"%d\n",lsmode?1:0);          //lsmode (useless since I cant save in lsmode) 42
    fprintf(fsav,"%d\n",nfesWhenToForceRestart);//nfesWhenToForceRestart 43
    fprintf(fsav,"%d\n",forcedRestartPeriod); //forcedRestartPeriod 44
+   fprintf(fsav,"%d\n",diameter);            //diameter 44bis
    //dep.cpp/h improving steps
    fprintf(fsav,"%d\n",improvingSteps);      //improvingSteps 45
    fprintf(fsav,"%d\n",lsImprovingSteps);    //lsImprovingSteps 46
@@ -330,6 +331,7 @@ void depLoad(char* filename) {
    lsmode = i==0 ? false : true;
    nowarning = fscanf(fsav,"%d",&nfesWhenToForceRestart);//nfesWhenToForceRestart 43
    nowarning = fscanf(fsav,"%d",&forcedRestartPeriod);   //forcedRestartPeriod 44
+   nowarning = fscanf(fsav,"%d",&diameter);              //diameter 44bis
    //dep.cpp/h improving steps
    nowarning = fscanf(fsav,"%d",&improvingSteps);        //improvingSteps 45
    nowarning = fscanf(fsav,"%d",&lsImprovingSteps);      //lsImprovingSteps 46
