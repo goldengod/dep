@@ -94,7 +94,7 @@ static double* sfy;
 static double* sfs; //sfx-sfy
 
 //inner temporary memory for diffMutation/crossover
-static int* tmpint;  //length = 2*n + 4*n (one decomposition sequence + four permutations) //INSERTIONS!!!
+static int* tmpint;  //length = n*(n-1)/2 + 2*n (one sorting sequence + two permutations)
 
 //inner bool flag indicating if fitnesses are all equal
 static bool sameFitness;
@@ -140,8 +140,7 @@ inline void updateGbest(int* x, int fx);
 inline bool termination();
 void popInit();
 bool popEvolve();
-//inline void randis(int* d, int& l, int* x);   //INSERTIONS!!! //old decomposition version
-inline void randis(int* s, int& l, int* x, double f=1.0);     //INSERTIONS!!! //new sorting version (LIMITS)
+inline void randbs(int* s, int& l, int* x, int* ainv, int nainv);
 void diffMutation(int i);
 inline void tpii(int* ch, int* fa, int* mo, int* ifa, int c1, int c2);
 void crossover(int i);
@@ -266,7 +265,7 @@ void depAlloc() {
    sfx = sfs;
    sfy = sfx+np;
    //temporary diffMutation/crossover memory
-   tmpint = new int[6*n]; //one insertions sequence (2*n) + four permutations //INSERTIONS!!!
+   tmpint = new int[n*(n-1)/2+2*n]; //one sorting sequence + two permutations
    //set the permutation byte size
    permByteSize = sizeof(int)*n;
    //lsHistory
@@ -275,12 +274,7 @@ void depAlloc() {
    //init to false the save flag
    haveToSave = false;
    //init the diameter
-   diameter = n-1; //VALID FOR INSERTIONS!!!
-   //check if f is greater than 1 and print error
-   if (finit>1.0 || minf>1.0 || maxf>1.0) {
-      cerr << "FINIT, MINF, MAXF HAS TO BE <= 1.0 FOR INSERTIONS!!!" << endl;
-      exit(EXIT_FAILURE);
-   }
+   diameter = n*(n-1)/2; //VALID FOR ADJACENT SWAPS!!!
    //done
 }
 
@@ -425,307 +419,212 @@ bool popEvolve() {
 }
 
 
-//NEW SORTING VERSION!!!
-//s/l = sequence that sorts x using insertions (INS_k(i,j) is s[2*k]<->s[2*k+1])
-//f is used to bound the insertions chain (it will be long l=ceil(f*original_l))
-void randis(int* s, int& l, int* x, double f) {
-   //variables
-   int i,j,k,y,a,b,m,ql,ll,ul,ind,w;
-   double tempDouble; //temp variable for ceil rounding
-   //initialize working memory (note that s is tmpint and take 2*n space)
-   static int* lis = tmpint+2*n; //just at the right of s   ("alive" together with s,u,su)
-   static int* u = lis+n;        //just at the right of lis ("alive" together with s,lis,su)
-   static int* su = u+n;         //just at the right of u   ("alive" together with s,u,lis)
-   static int* t = tmpint;       //reuse part of s space    ("alive" together with lis,u,q but not s)
-   static int* q = tmpint+n;     //reuse part of s space    ("alive" together with lis,u,t but not s)
-   /*
-   PHASE1) Compute the following data:
-      - t = array s.t. t[x[i]] is the length of a lis ending with x[i]
-      - ll = length of a lis
-      - ind = index of a uniformly random element that ends a lis (with length k)
-      COST: O(n*log(n))
-   */
-   //initialize length of the priority queue and length of the lis to 0
-   ql = ll = 0;
-   //scan the array (left-to-right) in order to: set t[x[i]], update ll and ind
-   for (i=0; i<n; i++) {
-      //y is the current value
-      y = x[i];
-      //binary search to find the index a (==b) of the smallest value in q greater than y
-      a = 0;
-      b = ql;
-      while (a<b) {
-         m = (a+b)/2;
-         if (y>q[m])
-            a = m+1;
-         else
-            b = m;
-      }
-      //replace q[a] with y and increase ql if a==ql
-      q[a] = y;
-      if (a==ql)
-         ql++;
-      //set t[y]
-      t[y] = a==0 ? 1 : 1+t[q[a-1]];
-      //update ll (max length) and ind (random index with length ll using reservoir sampling)
-      if (t[y]>ll) {
-         ll = t[y];
-         k = 1;            //init/reset reservoir sampling counter
-         ind = i;
-      } else if (t[y]==ll) {
-         k++;              //update reservoir sampling counter
-         if (irand(k)==0)  //same as rand01()<=1/k (reservoir sampling choice)
-            ind = i;
-      }
-   } //end-for
-   /*
-   PHASE2) Compute the following data:
-      - lis = array of length ll s.t. x[lis[i]] is the i-th _value_ of a RANDOM lis
-      - u = array of length ul=N-ll s.t. x[u[i]] is _not_ a _value_ of the lis, u is sorted
-      COST: O(nlogn) because we have to sort u at the end, otherwise O(n)
-   */
-   //the indexes from ind+1 to N-1 go directly in u
-   ul = n-ll;
-   for (i=n-1; i>ind; i--) //are n-1-ind elements to insert
-      u[--ul] = i;
-   //set target length (m=ll-1) and last lis index (ind)
-   m = ll - 1;
-   lis[m] = ind;
-   //set minimum length value for which an index entered in lis so far
-   a = ll;
-   //scan (right-to-left) from ind-1 to 0 in order to fill lis
-   for (i=ind-1; i>=0; i--) {
-      //y is the (current) length of a lis ending at x[i], thus i is a candidate for lis[y-1]
-      y = t[x[i]];
-      //current value x[i] is feasible iff:
-      //(1) its length y (==t[x[i]]) is greater or equal to the target length, AND
-      //(2) its length differs from lis length ll (other end-values excluded by res.sampl. of phase1), AND
-      //(3) it is smaller than the lis value at position y (for sure already filled)
-      if (y>=m && y<ll && x[i]<x[lis[y]] ) { //feasible
-         //two cases to consider:
-         //(1) normal: y==m (current length matches target length)
-         //(2) backtracking: y>m (current length greater than target length)
-         if (y==m) { //normal case
-            //update min length value for which an index entered in lis so far
-            //(this is the only place where new smaller length value can be discovered)
-            //or, if not a new min, for sure there was a previous index in lis that has to move in u
-            if (m<a)
-               a = m;
-            else
-               u[--ul] = lis[m-1];
-            //reset/set length observation counter to 1 (used for reservoir sampling) (no need to init)
-            q[m] = 1;
-            //set lis index and decrement target length (it is like reservoir sampling with probability 1)
-            lis[--m] = i;
-            //end of normal case
-         } else { //backtracking case (y>m for sure, since y<m has been already discarded)
-            //increment the counter of observed values with this length
-            q[y]++;
-            //using res.sampling: set lis/u index, update target length and u
-            if (irand(q[y])==0) {   //same as rand01()<1/q[y]
-               m = y-1;          //new target length
-               u[--ul] = lis[m]; //old lis value goes in u
-               lis[m] = i;       //replace lis[m] with i
-            } else //if res.sampling say no, i goes directly in u
-               u[--ul] = i;
-            //end of backtracking case
-         }
-         //end of feasible branch
-      } else { //unfeasible
-         //i goes directly in u
-         u[--ul] = i;
-         //end of unfeasible branch
-      }
-      //proceed to next/left item
+//s/l = sequence that sorts x, ainv/nainv = precomputed adjacent inversions of x
+inline void randbs(int* s, int& l, int* x, int* ainv, int nainv) {
+   int i,j,t;
+   //initialize sequence length to 0
+   l = 0;
+   //sorting loop
+   while (nainv>0) {
+      //randomly select an adjacent inversion (i,j)=(i,i+1)
+      t = irand(nainv);
+      i = ainv[t];
+      j = i+1;
+      //remove (i,j), i.e. i, from the list of adjacent inversions, i.e. ainv
+      ainv[t] = ainv[--nainv];
+      //add previous inversion, i.e. (i-1,i)=(t,i), to ainv if the case
+      t = i-1;
+      if (i>0 && x[t]<x[i] && x[t]>x[j])
+         ainv[nainv++] = t;
+      //add next inversion, i.e. (i,i+1)=(j,t), to ainv if the case
+      t = j+1;
+      if (t<n && x[t]<x[i] && x[t]>x[j])
+         ainv[nainv++] = j;
+      //apply the swap (i,j) to x
+      t = x[i];
+      x[i] = x[j];
+      x[j] = t;
+      //save the swap in s (only i)
+      s[l++] = i;
    }
-   //sort u first part (till current ul) (the last part is already sorted for sure)
-   //insertionSort(u,ul);
-   //restore u length
-   ul = n-ll;
-   //sort u basing on the values in x
-   insertionSortWithValues(u,ul,x);
-#ifdef MYDEBUG
-   if (!isSortedWithValues(u,ul,x)) {
-      cout << "u is not sorted wrt x" << endl;
-      exit(1);
-   }
-#endif
-   /*
-   PHASE3) The following part of code:
-      - compute l (==N-ll), i.e., the length of a decomposition (sorting sequance) of x
-      - compute a random sorting sequence of x in the output parameter s in a way that
-         x^-1 = INS(s[0],s[1]) * ... * INS(s[2*(l-1)],s[2*(l-1)+1]) = PROD_{i=0}^{l-1} INS(s[2*i],s[2*i+1])
-         x = INS(s[2*(l-1)+1],s[2*(l-1)] * ... * INS(s[1],s[0]) = PROD_{i=l-1}^{0} INS(s[2*i+1],s[2*i])
-      - sort x
-      COST: O(n^2)
-   */
-   //compute target length for the sorting sequence (limit version)
-//f=1.0;//debug
-   l = tempDouble = f*ul;  //ceil rounding ok
-   if (l<tempDouble)       //ceil rounding ok
-      l++;                 //ceil rounding ok
-   //compute successors of u in lis (su[i] such that lis[su[i]] is the first lis element > u[i])
-   j = 0;
-   for (i=0; i<ul; i++) {  //cost O(n) since ul+ll=n and both i and j advance of one step
-      while (j<ll && x[lis[j]]<x[u[i]])
-         j++;
-      su[i] = x[lis[j]]>x[u[i]] ? j : ll; //because j cannot reach ll in the while above
-   }
-   //initialize s true length
-   w = 0;
-   //while target length not reached increase it and perform bookkeeping
-   while (w<l) { //begin of sorting loop
-      //select i from u using roulette wheel with "weighted reservoir sampling" technique
-      m = 0;                                    //initialize sum of observed weights
-      for (i=0; i<ul; i++) {
-         b = su[i]==ll ? n : lis[su[i]];        //right bound of current item
-         a = su[i]==0 ? 0 : lis[su[i]-1];       //left bound of current item
-         y = a==b ? 1 : b-a;                    //weight for current item
-         m += y;                                //update sum of observed weights
-         if (irand(m)<y)                        //same as urand01()<weight/m
-            k = i;                              //update reservoir (of size 1)
-      }
-      i = u[k]; //the chosen i with bounds a,b / Pos k in u / Succ in lis at pos su[k]
-      //compute the left/right bounds for the allowed j
-      b = su[k]==ll ? n : lis[su[k]];           //right bound of current i==u[k]
-      a = su[k]==0 ? 0 : lis[su[k]-1];          //left bound of current i==u[k] 
-      //choose a random index j from: (1) [a,a] if a==b, (2) [a,b) if i<a, (3) (a,b] if i>b
-      j = a==b ? a : (a + (i<a?0:1) + irand(b-a));
-      //append INS(i,j) in the sorting sequence s (and increase its length w)
-      s[2*w] = i;
-      s[2*w+1] = j;
-      w++;
-      //update x,lis,u,su by modifying their values after x=x*INS(i,j)
-      //(LIS_UPDATE_PART1) insert index j at position su[k] in lis
-      //    by also moving right lis elements from su[k] to ll and incrementing ll
-      a = su[k];  //a is now the position in lis where index j has to be inserted
-      if (a<ll)   //this if is needed only when i<j
-         memmove(lis+a+1,lis+a,sizeof(int)*(ll-a));
-      ll++;
-      lis[a] = j;
-      //(U/SU_UPDATE_PART1) remove item k from u/su by decreasing ul and move left the chunk [k+1,ul)
-      ul--;
-      if (k<ul) {
-         memmove(u+k,u+k+1,sizeof(int)*(ul-k));
-         memmove(su+k,su+k+1,sizeof(int)*(ul-k));
-      }
-      //(X_UPDATE_PART1) store in a temporary variable (y) x[i]
-      y = x[i];
-      //now 2 cases: i<j and i>j
-      if (i<j) {
-         //(LIS_UPDATE_PART2a) decrement lis[h] s.t. 0<=h<a and lis[h]>i (now lis is updated)
-         for (; --a>=0 && lis[a]>i;)   //note that a still is su[k]
-            lis[a]--;
-         //(U_UPDATE_PART2a) decrement the u elements that are in (i,j] (now u is updated)
-         for (a=0; a<ul; a++)
-            if (u[a]>i && u[a]<=j)
-               u[a]--;
-         //(X_UPDATE_PART2a) move-left values x[i+1..j] because it is a forward insertion
-         memmove(x+i,x+i+1,sizeof(int)*(j-i));
-         //end case i<j
-      } else { //i>j
-         //(LIS_UPDATE_PART2b) increment lis[h] s.t. a<h<ll and lis[h]<i (now lis is updated)
-         for (; ++a<ll && lis[a]<i;)   //note that a still is su[k]
-            lis[a]++;
-         //(U_UPDATE_PART2b) increment the u elements that are in [j,i) (now u is updated)
-         for (a=0; a<ul; a++)
-            if (u[a]>=j && u[a]<i)
-               u[a]++;
-         //(X_UPDATE_PART2b) move-right values x[j..i] because it is a backward insertion
-         memmove(x+j+1,x+j,sizeof(int)*(i-j));
-         //end case i>j
-      }
-      //(SU_UPDATE_PART2) increment su elements in the last chunk [k,ul) (now su is updated)
-      for (a=k; a<ul; a++)
-         su[a]++;
-      //(X_UPDATE_PART3) finalize x*INS(i,j) by storing in x[j] the temporary value y (now x is updated)
-      x[j] = y;
-      //go to next sorting move
-#ifdef MYDEBUG
-      if (!isSortedWithValues(lis,ll,x)) {
-         cout << "Problem with lis" << endl;
-         exit(1);
-      }
-      if (!isSortedWithValues(u,ul,x)) {
-         cout << "Problem with u" << endl;
-         exit(1);
-      }
-      if (ll+ul!=n) {
-         cout << "ll+ul not n" << endl;
-         exit(1);
-      }
-      int myj = 0;
-      int mysu[n];
-      for (int myi=0; myi<ul; myi++) {
-         while (myj<ll && x[lis[myj]]<x[u[myi]])
-            myj++;
-         mysu[myi] = x[lis[myj]]>x[u[myi]] ? myj : ll;
-         int myb = mysu[myi]==ll ? n : lis[mysu[myi]];
-         int mya = mysu[myi]==0 ? 0 : lis[mysu[myi]-1];
-      }
-      for (int myi=0; myi<ul; myi++)
-         if (mysu[myi]!=su[myi]) {
-            cout << "Problem with su" << endl;
-            exit(1);
-         }
-#endif
-   } //end of sorting loop
-#ifdef MYDEBUG
-   if (w!=l) {
-      cout<<"w!=l"<<endl;
-      exit(1);
-   }
-   //to check this, please uncomment the "f=1.0" above
-   //if (!isSorted(x,n)) {
-   //   cout << "x is not sorted" << endl;
-   //   exit(1);
-   //s}
-#endif
    //done
 }
 
 
-
 //differential mutation of individual i
-void diffMutation(int i) { //INSERTIONS!!!
+void diffMutation(int i) {
    //DE/rand/1: y1[i] = x[r0] + F * (x[r1] - x[r2])
-   //initialize variables
-   int r0,r1,r2,*p,*pt,*ix1,lss,j,k,insi,insj;
-   static int* ss = tmpint; //use the temp memory (sorting sequence - 2*n max length)
-   static int* ix1dotx2 = tmpint+5*n; //use the last chunk of temp memory
-   //get 3 different indexes r0,r1,r2 different also from i
+   //(0) initialize variables
+   int r0,r1,r2,t,k,j,w,*p,*ixx,*pt,*pp,*p0;
+   double tempDouble;                           //temp variable for ceil rounding
+   static int* ss = tmpint;                     //use the temp memory (sorting sequence)
+   static int* z = tmpint+(n*(n-1)/2);          //use the temp memory (just at right of ss)
+   static int* ainv = z+n;                      //use the temp memory (just at right of z)
+//int mydebug;//debug
+   //(1) get 3 different indexes r0,r1,r2 different also from i
    threeRandIndicesDiffFrom(np,i,r0,r1,r2);
-   //compute scale factor and truncation bound using jde rule (need before randis for limit version)
+   //(2) compute scale factor using jde rule
    sfy[i] = urand()<.1 ? minf+(maxf-minf)*urandi() : sfx[i];
-   //x[r1]-x[r2] = x[r2]^-1*x[r1] = sort_seq.(x[r1]^-1*x[r2]) in 2 steps (I already know x[r1]^-1=ix[r1]):
-   //(1) ix1dotx2 = ix1 * x[r2]
-   ix1 = ix[r1];
-   p = x[r2];
-   for (j=0; j<n; j++)
-      ix1dotx2[j] = ix1[*p++]; //same as ix1[p[j]] = ix1[x[r2][j]]
+   //(3) check and handle the easy case F=1
+   if (sfy[i]==1.) {
+      //begin case F=1
+      //compute y1[i] = x[r0] + (x[r1] - x[r2]) = x[r0] * x[r2]^-1 * x[r1]
+      p = y1[i];
+      p0 = x[r0];
+      ixx = ix[r2];
+      pp = x[r1];
+      for (j=0; j<n; j++)
+         p[j] = p0[ixx[pp[j]]];
 #ifdef MYDEBUG
-   if (!permValid(ix1dotx2,n)) {
-      cout<<"diffMutation ix1dotx2"<<endl;
-      exit(1);
-   }
+      int myp[n];
+      for (j=0; j<n; j++)
+         myp[j] = x[r0][ix[r2][x[r1][j]]];
+      for (j=0; j<n; j++)
+         if (y1[i][j]!=myp[j]) {
+            cout << "Problem with the case F=1" << endl;
+            exit(1);
+         }
 #endif
-   //(2) ss,lss = randis(ix1dotx2) using limited version (sfy[i])
-   randis(ss,lss,ix1dotx2,sfy[i]);
-   //apply the inverse of the insertions in ss to x[r0] and put the result in y1[i]
-   //all the insertions in ss, since we are using limited version of randis
+      //nothing else to do (this is an easy case) so return
+      return;
+      //end case F=1
+   }
+   //(4) distinguish the 2 cases F<1 and F>1
+   if (sfy[i]<1.) {
+      //begin case F<1: build z with its adjacent inversions, randbs on z, compute k, compute starting y
+      //(5a) build z with its adjacent inversions ainv/k (k is #ainv)
+      //z = x[r1]-x[r2] = x[r2]^-1*x[r1] = sort_seq(x[r1]^-1*x[r2]) (I already know x[r1]^-1=ix[r1])
+      ixx = ix[r1];
+      p = x[r2];
+      *z = ixx[*p];           //first outside the for ... it's the same of "z[0] = ixx[p[0]]"
+      k = 0;                  //init no. of adjacent inversions
+      pt = ainv;              //due because ainv is static
+      for (j=1; j<n; j++) {   //from the second to the last inside the for (so the if is ok)
+         z[j] = ixx[*++p];    //"ixx[*++p]" is the same of "ixx[p[j]]"
+         if (z[j-1]>z[j]) {
+            *pt++ = j-1;      //considering also next line, it is the same of "ainv[k++]=j-1"
+            k++;
+         }
+      }
+      //(6a) ss,w = sort_sequence(z) using randbs sorting loop
+      randbs(ss,w,z,ainv,k);
+      //(7a) compute k, i.e. where to truncate ss, basing on w and sfy[i] and using ceil rounding
+      k = tempDouble = sfy[i] * w;  //tempDouble needed to implement ceil rounding
+      if (k<tempDouble)             //this is to implement ceil rounding
+         k++;
+      //(8a) compute starting y: y1[i] becomes a copy of x[r0]
+      memcpy(y1[i],x[r0],permByteSize);
+      //end case F<1
+   } else {
+      //begin case F>1: build z with its adjacent inversions, compute starting y, randbs on z, compute k
+      //(5b) build z with its adjacent inversions ainv/k (k is #ainv)
+      //DEC(R) = SORT(E->X) + SORT(X->R) = X + SORT(X->R) = X + SORT(R^-1*X) = X + SORT(R*X)
+      //      thus the z to sort has to be R*(x[r1]-x[r2]) = R * x[r2]^-1 * x[r1]
+      //      note: the multiplication at left by R can be simulated, i.e. (R*X)[i] = R[X[i]] = n-1-X[i]
+      //(8b - anticipated) together compute also starting y, i.e. x[r0] * x[r2]^-1 * x[r1]
+      ixx = ix[r2];
+      p = x[r1];
+      *z = n-1-ixx[*p];       //first outside the for ... it's the same of "z[0] = n-1-ixx[p[0]]"
+      p0 = x[r0];             //for starting y (8b)
+      pp = y1[i];             //for starting y (8b)
+      *pp = p0[ixx[*p]];      //for starting y (8b), 1st outside for, equal to y1[i][0]=x[r0][ixx[x[r1][0]]]
+      k = 0;                  //init no. of adjacent inversions
+      pt = ainv;              //due because ainv is static
+      for (j=1; j<n; j++) {   //from the second to the last inside the for (so the if is ok)
+         z[j] = n-1-ixx[*++p];//"ixx[*++p]" is the same of "ixx[p[j]]"
+         pp[j] = p0[ixx[*p]]; //for starting y (8b), equal to "y1[i][j] = x[r0][ixx[x[r1][j]]]"
+         if (z[j-1]>z[j]) {
+            *pt++ = j-1;      //considering also next line, it is the same of "ainv[k++]=j-1"
+            k++;
+         }
+      }
+      //(6b) ss,w = sort_sequence(z) using randbs sorting loop
+      randbs(ss,w,z,ainv,k);
+#ifdef MYDEBUG
+      //I have to check that "x[r2]^-1 * x[r1] * ss = reverse_identity"
+      int myp[n];
+      for (j=0; j<n; j++)
+         myp[j] = ix[r2][x[r1][j]];
+      for (j=0; j<w; j++) {
+         t = myp[ss[j]];
+         myp[ss[j]] = myp[ss[j]+1];
+         myp[ss[j]+1] = t;
+      }
+      for (j=0; j<n; j++)
+         if (myp[j]!=n-1-j) {
+            cout << "Problem with case F>1" << endl;
+            exit(1);
+         }
+#endif
+      //(8b) compute k, i.e. where to truncate ss, basing on w and sfy[i] and using ceil rounding
+      //in this case (F>1), L=D-W, K = min{ceil(F*L),D}-L = min{ceil(F*(D-W)),D}-D+W
+      k = tempDouble = sfy[i]*(diameter-w);  //tempDouble needed to implement ceil rounding
+      if (k<tempDouble)                      //this is to implement ceil rounding
+         k++;
+      if (k>diameter)                        //this is the minimum part of the formula above
+         k = diameter;
+      k += w - diameter;                     //this is the last "-D+W" part
+//mydebug=w;//debug
+#ifdef MYDEBUG
+      if (k<0 || k>w) {
+         cout << "k is not ok in the case F>1" << endl;
+         exit(1);
+      }
+#endif
+      //end case F>1
+   }
+   //(9) apply the first k entries of ss to y1[i]
    p = y1[i];
-   memcpy(p,x[r0],permByteSize);
-   pt = ss; //... since ss is a static variable
-   for (j=0; j<lss; j++) { //ss is a sorting sequence, so "inversion happened automatically"
-      insi = *pt++;
-      insj = *pt++;
-      ins(p,insi,insj);
+   pt = ss;             //due beecause ss is a static variable
+   for (j=0; j<k; j++) {
+      w = *pt++;        //"*pt++" is the same of "ss[j]"
+      t = p[w];         //this line and the next two implement the adjacent swap
+      p[w] = p[w+1];
+      p[w+1] = t;
    }
 #ifdef MYDEBUG
    if (!permValid(y1[i],n)) {
       cout<<"diffMutation y1["<<i<<"]"<<endl;
       exit(1);
    }
+   //to check the following please uncomment the two lines with the variable "mydebug" above
+   //check the correct number of generators
+   //int myz[n];    //put x[r1]^-1 * x[r2] in myz
+   //for (j=0; j<n; j++)
+   //   myz[j] = ix[r1][x[r2][j]];
+   //int myai[n];   //put the adj. inv. of myz in myai
+   //int mynai = 0;
+   //for (j=1; j<n; j++)
+   //   if (myz[j-1]>myz[j])
+   //      myai[mynai++] = j-1;
+   //int myss[n*n]; //put the sort. seq. of myz in myss
+   //int mylss;
+   //randbs(myss,mylss,myz,myai,mynai);
+   //int mygen;     //compute the no. of generators to check
+   //double mytd;
+   //mygen = mytd = sfy[i]*mylss;
+   //if (mygen<mytd)
+   //   mygen++;
+   //if (sfy[i]<1.) { //check if everything ok - case f<1
+   //   if (k!=mygen) {
+   //      cout << "Number of generators mismatch when F<1" << endl;
+   //      exit(1);
+   //   }
+   //} else {       //check if everything ok - case f>1
+   //   //L=D-W, K = min{ceil(F*L),D}-L = min{ceil(F*(D-W)),D}-D+W
+   //   if (mygen>diameter)
+   //      mygen = diameter;
+   //   int myl2 = mydebug; //length of 2nd part
+   //   int myl1 = diameter-myl2; //length of 1st part
+   //   if (myl1!=mylss) {
+   //      cout << "Problem with lengths when F>1" << endl;
+   //      exit(1);
+   //   }
+   //   if (mylss+k!=mygen) {
+   //      cout << "Number of generators mismatch when F>1" << endl;
+   //      exit(1);
+   //   }
+   //}
 #endif
    //done
 }
