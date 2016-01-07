@@ -61,6 +61,6 @@ v1.0.4 - uploaded the 24 nov 2015 - limited/bounded version for randis,randss (d
 v1.0.5 - uploaded the 24 nov 2015 - bug fix = there was rounding instead of ceil on the diffMutations (dep.cpp.ORIGINAL,dep.cpp.INSERTIONS,dep.cpp.EXCHANGES,dep.cpp)
 v1.0.6 - uploaded the 10 dec 2015 - more entropy on dep.cpp.INSERTIONS (previous version is now in dep.cpp.INSERTIONS_FASTER_LESS_ENTROPY)
 v1.0.7 - uploaded the 15 dec 2015 - implemented the case F>1 for adjacent swaps (dep.cpp and dep.cpp.ORIGINAL), added the --minf,--maxf,--f parameter (currently maxf>1 does not work with other generators or other mutations), the output file also write minf,maxf, the save mechanism also saves minf,maxf
-
+v1.0.8 - uploaded the 07 jan 2016 - bug fix for fixed f, insertions works only with F<=1, added python library for small experiments
 
 
