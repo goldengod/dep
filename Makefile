@@ -9,7 +9,7 @@ LIBS =
 all: deptft depms testtft testms
 
 clean:
-	rm *.o deptft depms testtft testms
+	rm *.o deptft depms testtft testms *.pyc
 
 cleantilde:
 	rm *~
@@ -42,10 +42,10 @@ DEPTFT_OBJECTS = SFMT.o random.o timer.o utils.o problem_tft.o dep_tft.o
 
 DEPMS_OBJECTS = SFMT.o random.o timer.o utils.o problem_ms.o dep_ms.o
 
-deptft: depmain.cpp $(DEPTFT_OBJECTS)
+deptft: depmain.cpp save_resume.cpp $(DEPTFT_OBJECTS)
 	$(CPP) -static $(CPPFLAGS) $(INCLUDES) depmain.cpp $(DEPTFT_OBJECTS) $(LFLAGS) $(LIBS) -o deptft
 
-depms: depmain.cpp $(DEPMS_OBJECTS)
+depms: depmain.cpp save_resume.cpp $(DEPMS_OBJECTS)
 	$(CPP) -static $(CPPFLAGS) $(INCLUDES) depmain.cpp $(DEPMS_OBJECTS) $(LFLAGS) $(LIBS) -o depms
 
 testtft: test.cpp problem_tft.o utils.o random.o SFMT.o

@@ -15,6 +15,8 @@ Du = None
 Dc = None
 e = None
 r = None
+x = None
+xa = None
 ASW = None
 EXC = None
 INS = None
@@ -34,6 +36,8 @@ Du                    diameter with Ulam distance
 Dc                    diameter with Cayley distance
 e                     identity permutation
 r                     identity reversed permutation
+x                     a random permutation
+xa                    antipodal permutation of x with respect to exchanges
 ASW                   set of adjacent swap generators (in tuple normal form)
 EXC                   set of exchange generators (in tuple normal form)
 INS                   set of insertion generators (in tuple normal form)
@@ -75,6 +79,7 @@ urlis(x)              unfirom random lis of x
 ind(l,x)              indexes of x where values in list l appear
 cycles(x)             cycle decomposition of x
 ncycles(x)            number of cycles of the decomposition of x
+cycleToPerm(c)        build a permutation corresponding to cycle c
 prandUnredLis()       random permutation whose lis is "unreducible"
 hasUnredLis(x)        check if the lis of x can be reduced or not
 lisldsRedCases(x)     print and return lis/lds reduction cases after applying all insertion generators (if additional False is passed it doesnt print)
@@ -92,12 +97,14 @@ npermWithInvers(k)    number of permutations with k inversions
 seqA047874(n,k)       [n,k] number of the sequence A047874 (it works only till n=60 and requires the file at https://oeis.org/A047874/b047874.txt or internet)
 npermWithLisLength(k) number of permutations with a lis of length k (it works only tille n=60 the file at https://oeis.org/A047874/b047874.txt or internet)
 applySeq(x,s)         return x*s[0]*s[1]*...
+composeSeq(s)         return s[0]*s[1]*...
 mapAswSeq(s)          from a sequence of ASW tuples return a sequence of permutations
 mapExcSeq(s)          from a sequence of EXC tuples return a sequence of permutations
 mapInsSeq(s)          from a sequence of INS tuples return a sequence of permutations
 randbs(x)             return a sequence of ASW tuples that sorts x
 randDecAsw(x)         return a ASW decomposition of x
 randss(x)             return a sequence of EXC tuples that sorts x
+randmergess(x)        return a sequence of EXC tuples that UNsorts x
 randDecExc(x)         return a EXC decomposition of x
 randis(x,randlis)     return a sequence of INS tuples that sorts x (UNIFORM STEP NOT IMPLEMENTED) (the randlis function as parameter is optional)
 randDecIns(x,randlis) return a INS decomposition of x (see randis)
@@ -125,6 +132,8 @@ def reset(size=DEFAULT_n):
 	#useful permutations
 	e = range(n)
 	r = e[::-1]
+	x = prand()
+	xa = applySeq(x,mapExcSeq(randmergess(x)))
 	#generators sets
 	ASW = set()
 	for i in range(n-1):
@@ -149,6 +158,8 @@ def reset(size=DEFAULT_n):
 	__main__.Dc = Dc
 	__main__.e = e
 	__main__.r = r
+	__main__.x = x
+	__main__.xa = xa
 	__main__.ASW = ASW
 	__main__.pASW = pASW
 	__main__.EXC = EXC
@@ -377,6 +388,15 @@ def cycles(perm):
 	
 def ncycles(x):
 	return len(cycles(x))
+
+def cycleToPerm(c):
+	z = range(n)
+	for k in range(len(c)-1):
+		i = c[k]
+		j = c[k+1]
+		z[i] = j
+	z[c[-1]] = c[0]
+	return z
 	
 #lis reduction functions
 def prandUnredLis():
@@ -542,6 +562,9 @@ def applySeq(x,s):
 		z = dot(z,y)
 	return z
 	
+def composeSeq(s):
+	return applySeq(e,s)
+	
 def mapAswSeq(s):
 	return map(lambda p : asw(p), s)
 	
@@ -568,7 +591,7 @@ def randDecAsw(x):
 def randss(x):
 	y = x[:]
 	s = []
-	cyc = cycles(x)
+	cyc = cycles(y)
 	while len(cyc)<n:
 		cyc = filter(lambda c : len(c)>1,cyc)
 		q = list(numpy.cumsum([len(c)*(len(c)-1)/2 for c in cyc]))
@@ -581,6 +604,29 @@ def randss(x):
 		i = random.choice(c)
 		c.remove(i)
 		j = random.choice(c)
+		s.append(exc_nf((i,j)))
+		swap(y,i,j)
+		cyc = cycles(y)
+	return s
+	
+def randmergess(x):
+	y = x[:]
+	s = []
+	cyc = cycles(y)
+	while len(cyc)>1:
+		w = list(numpy.cumsum([len(cyc[k])*(n-len(cyc[k])) for k in range(len(cyc))]))
+		r = random.randint(0,w[-1]-1)
+		for c1 in range(len(cyc)):
+			if r<w[c1]:
+				break
+		i = random.choice(cyc[c1])
+		del cyc[c1]
+		w = list(numpy.cumsum(map(lambda c : len(c),cyc)))
+		r = random.randint(0,w[-1]-1)
+		for c2 in range(len(cyc)):
+			if r<w[c2]:
+				break
+		j = random.choice(cyc[c2])
 		s.append(exc_nf((i,j)))
 		swap(y,i,j)
 		cyc = cycles(y)

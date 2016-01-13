@@ -23,6 +23,9 @@ int discardLine(FILE* f);
 //print a permutation to standard output
 void printPerm(int* p, int n);
 
+//print a permutation in python format
+void printPermPython(int* p, int n);
+
 //insertion sort algorithm that sort a basing on the values in v
 void insertionSortWithValues(int* a, int l, int* v);
 

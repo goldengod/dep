@@ -10,20 +10,20 @@ using namespace std;
 
 
 int main(int argc, char** argv) {
-   
-   if (argc<2) {
-      cerr << USAGE_STRING << endl;
-      return EXIT_FAILURE;
-   }
-   readInstance(argv[1]);
-   int x[n];
-   for (int i=0; i<n; i++)
-      x[i] = atoi(argv[i+2]);
-   cout << "fitness = " << eval(x) << endl;
-   char s[PERMSTR_SIZE];
-   perm2str(x,n,s);
-   cout << "permutation = " << s << endl;
+	
+	if (argc<2) {
+		cerr << USAGE_STRING << endl;
+		return EXIT_FAILURE;
+	}
+	readInstance(argv[1]);
+	int x[n];
+	for (int i=0; i<n; i++)
+		x[i] = atoi(argv[i+2]);
+	cout << "fitness = " << eval(x) << endl;
+	char s[PERMSTR_SIZE];
+	perm2str(x,n,s);
+	cout << "permutation = " << s << endl;
 
-   return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }
 

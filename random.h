@@ -28,26 +28,26 @@ unsigned int randSeed();
 
 //random double in [0,1)
 inline double urand() {
-   return sfmt_genrand_real2(&sfmt);
+	return sfmt_genrand_real2(&sfmt);
 }
 
 
 //random double in [0,1]
 inline double urandi() {
-   return sfmt_genrand_real1(&sfmt);
+	return sfmt_genrand_real1(&sfmt);
 }
 
 
 //random integer in [0,b)
 inline int irand(int b) {
-   return sfmt_genrand_uint32(&sfmt)%b;
+	return sfmt_genrand_uint32(&sfmt)%b;
 }
 
 
 //two random indices with two calls to the rng
 inline void twoRandIndices(int size, int& first, int& second) {
-   first = irand(size);
-   second = (first+1+irand(size-1))%size;
+	first = irand(size);
+	second = (first+1+irand(size-1))%size;
 }
 
 

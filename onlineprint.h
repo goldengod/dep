@@ -6,15 +6,15 @@ using namespace std;
 
 
 inline void genPrint() {
-   //print nothing
+	//print nothing
 }
 
 
 inline void bestPrint() {
-   //print nfes,ngen,nrestarts,fgbest
-   cerr << "nfes=" << nfes << "\tngen=" << ngen
-        << "\tnrestarts=" << nrestarts << "\tfgbest=" << fgbest
-        << "\tls=" << gbestls << endl;
+	//print nfes,ngen,nrestarts,fgbest
+	cerr << "nfes=" << nfes << "\tngen=" << ngen
+		<< "\tnrestarts=" << nrestarts << "\tfgbest=" << fgbest
+		<< "\tls=" << gbestls << endl;
 }
 
 #endif

@@ -8,7 +8,7 @@ sfmt_t sfmt;
 
 //init random number generator with seed
 void initRand(unsigned int seed) {
-   sfmt_init_gen_rand(&sfmt,seed);
+	sfmt_init_gen_rand(&sfmt,seed);
 }
 
 
@@ -78,28 +78,28 @@ int* prand(int size, int* perm) {
 
 //write rng state to a text file already opened without closing it
 void writeRandState(FILE* f) {
-   //write sfmt.state
-   int i,j;
-   for (i=0; i<SFMT_N; i++) //sfmt.state has length SFMT_N
-      for (j=0; j<4; j++) //sfmt.state[i].u has length 4
-         fprintf(f,"%u ",sfmt.state[i].u[j]); //%u since it is uint32_t
-   //write sfmt.idx
-   fprintf(f,"%d\n",sfmt.idx); //%d since it is int
-   //done
+	//write sfmt.state
+	int i,j;
+	for (i=0; i<SFMT_N; i++) //sfmt.state has length SFMT_N
+		for (j=0; j<4; j++) //sfmt.state[i].u has length 4
+			fprintf(f,"%u ",sfmt.state[i].u[j]); //%u since it is uint32_t
+	//write sfmt.idx
+	fprintf(f,"%d\n",sfmt.idx); //%d since it is int
+	//done
 }
 
 
 //read rng state from a text file already opened without closing it
 void readRandState(FILE* f) {
-   //read sfmt.state
-   int i,j,nowarning; //nowarning is to avoid compiler complaints
-   for (i=0; i<SFMT_N; i++) //sfmt.state has length SFMT_N
-      for (j=0; j<4; j++) //sfmt.state[i].u has length 4
-         nowarning = fscanf(f,"%u",&(sfmt.state[i].u[j])); //%u since it is uint32_t
-   //read sfmt.idx
-   nowarning = fscanf(f,"%d",&(sfmt.idx)); //%d since it is int
-   //avoid compiler complaints
-   nowarning++;
-   //done
+	//read sfmt.state
+	int i,j,nowarning; //nowarning is to avoid compiler complaints
+	for (i=0; i<SFMT_N; i++) //sfmt.state has length SFMT_N
+		for (j=0; j<4; j++) //sfmt.state[i].u has length 4
+			nowarning = fscanf(f,"%u",&(sfmt.state[i].u[j])); //%u since it is uint32_t
+	//read sfmt.idx
+	nowarning = fscanf(f,"%d",&(sfmt.idx)); //%d since it is int
+	//avoid compiler complaints
+	nowarning++;
+	//done
 }
 

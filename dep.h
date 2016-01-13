@@ -22,8 +22,8 @@ extern int ls; //0 (no ls), 1 (baldwinian ls), 2 (lamarckian ls)
 extern double frfactor;
 
 //min/max values for scale factor f (used by jde rule)
-extern double minf;
-extern double maxf;
+extern double fmin;
+extern double fmax;
 
 //global best declaration
 extern int* gbest;
