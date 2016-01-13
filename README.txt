@@ -30,6 +30,7 @@ OTHER MUTATIONS FOR TEST PURPOSES:
 
 1) dep.cpp.ORIGINAL
 it contains the code for the original differential mutation introduced in the paper (generators are adjacent swaps and randomized decomposition is performed by means of randomized bubble sort)
+there is implementation for F>1 introduced on date 15 dec 2015
 
 2) dep.cpp.PATHRELINKING 
 it contains the code for the path relinking implementation
@@ -43,11 +44,14 @@ it contains the code for the "completely random" mutation
 5) dep.cpp.INSERTIONS
 introduced on date 03-11-2015. Final version on date 10-12-2015. It is like (1) but it uses insertions as generators and randomized insertion sort
 there is also the variant "dep.cpp.INSERTIONS_FASTER_LESS_ENTROPY" that it is a bit faster (though asymptotically the same") but it has "less entropy" on the produced decomposition
+there is NO implementation for F>1 (lot of open problems for this case)
 
 6) dep.cpp.EXCHANGES
 introduced on date 19-11-2015. It is like (1) but it uses exchanges as generators and randomized (and generalized) selection sort
+there is implementation for F>1 introduced on date 13 jan 2016
 
 NOTE: In order to compile with the chosen mutation scheme, please copy the chosen file to dep.cpp and then compile
+TODO: currently PATHRELINKING,RANDOMINDIVIDUAL,COMPLETELYRANDOM do not compile anymore for few errors due to some updates
 
 ----------------------------------------------------
 
@@ -62,5 +66,5 @@ v1.0.5 - uploaded the 24 nov 2015 - bug fix = there was rounding instead of ceil
 v1.0.6 - uploaded the 10 dec 2015 - more entropy on dep.cpp.INSERTIONS (previous version is now in dep.cpp.INSERTIONS_FASTER_LESS_ENTROPY)
 v1.0.7 - uploaded the 15 dec 2015 - implemented the case F>1 for adjacent swaps (dep.cpp and dep.cpp.ORIGINAL), added the --minf,--maxf,--f parameter (currently maxf>1 does not work with other generators or other mutations), the output file also write minf,maxf, the save mechanism also saves minf,maxf
 v1.0.8 - uploaded the 07 jan 2016 - bug fix for fixed f, insertions works only with F<=1, added python library for small experiments
-
+v1.0.9 - uploaded the 13 jan 2016 - exchanges with F>1 implemented, reindentation everywhere, updated plib, minf/maxf renamed to fmin/fmax, bugfix on makefile
 
