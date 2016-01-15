@@ -272,7 +272,7 @@ void writeResults() {
 	FILE* f = fopen(out,"r");
 	if (!f) {
 		f = fopen(out,"w");
-		fprintf(f,"exe,instance,n,m,maxnfes,maxtime,seed,np,finit,fmin,fmax,alpha,heu,ls,frfactor"); //input
+		fprintf(f,"exe,instance,n,m,maxnfes,seed,np,finit,fmin,fmax,alpha,heu,ls,frfactor"); //input
 		fprintf(f,",fgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,improvingSteps,lsImprovingSteps,execTime,minStageLength,maxStageLength,avgStageLength,improvingStages,nls,nfesls,nImprovingls,totImprovingls,gbestls,gbest\n"); //output
 	}
 	fclose(f);
@@ -293,8 +293,8 @@ void writeResults() {
 	double2str(avgStageLength,savgStageLength);
 	f = fopen(out,"a");
 	//input print
-	fprintf(f,"%s,%s,%d,%d,%d,%d,%u,%d,%s,%s,%s,%s,%d,%d,%s",
-				exe,instance,n,m,maxnfes,maxTime,seed,np,sfinit,sfmin,sfmax,salpha,heu,ls,sfrfactor);
+	fprintf(f,"%s,%s,%d,%d,%d,%u,%d,%s,%s,%s,%s,%d,%d,%s",
+				exe,instance,n,m,maxnfes,seed,np,sfinit,sfmin,sfmax,salpha,heu,ls,sfrfactor);
 	//output print
 	fprintf(f,",%d,%d,%d,%d,%d,%d,%d,%d,%d,%lu,%d,%d,%s,%d,%d,%d,%d,%d,%d,%s\n",
 			fgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,
