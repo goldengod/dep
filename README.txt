@@ -26,6 +26,29 @@ NOTE: You can enable the constants above by adding "-DONLINEPRINT" (et similia) 
 
 ----------------------------------------------------
 
+VERSION HISTORY:
+
+v1.0.0 - uploaded the 12 jun 2015 - first version
+v1.0.1 - uploaded the 03 nov 2015 - differential mutation with insertions' generators added (dep.cpp.INSERTIONS)
+v1.0.2 - uploaded the 16 nov 2015 - sorting sequence (instead of decomposition) on insertions (modified dep.cpp.INSERTIONS)
+v1.0.3 - uploaded the 19 nov 2015 - differential mutation with exchanges' generators added (dep.cpp.EXCHANGES)
+v1.0.4 - uploaded the 24 nov 2015 - limited/bounded version for randis,randss (dep.cpp.INSERTIONS,dep.cpp.EXCHANCES)
+v1.0.5 - uploaded the 24 nov 2015 - bug fix = there was rounding instead of ceil on the diffMutations (dep.cpp.ORIGINAL,dep.cpp.INSERTIONS,dep.cpp.EXCHANGES,dep.cpp)
+v1.0.6 - uploaded the 10 dec 2015 - more entropy on dep.cpp.INSERTIONS (previous version is now in dep.cpp.INSERTIONS_FASTER_LESS_ENTROPY)
+v1.0.7 - uploaded the 15 dec 2015 - implemented the case F>1 for adjacent swaps (dep.cpp and dep.cpp.ORIGINAL), added the --minf,--maxf,--f parameter (currently maxf>1 does not work with other generators or other mutations), the output file also write minf,maxf, the save mechanism also saves minf,maxf
+v1.0.8 - uploaded the 07 jan 2016 - bug fix for fixed f, insertions works only with F<=1, added python library for small experiments
+v1.0.9 - uploaded the 13 jan 2016 - exchanges with F>1 implemented, reindentation everywhere, updated plib, minf/maxf renamed to fmin/fmax, bugfix on makefile
+v1.1.0 - uploaded the 15 jan 2016 - different generators for diffMutation merged in a single file and using function pointers, write also maxtime on output, bugfixes on makefile (bad mutations files are no more valid for the moment)
+
+----------------------------------------------------
+
+
+
+
+
+
+OLD CONTENT OF README NO MORE VALID FROM 15-01-2016!!!!!!!!!!!!!!!!!!!!!!!
+
 OTHER MUTATIONS FOR TEST PURPOSES:
 
 1) dep.cpp.ORIGINAL
@@ -52,19 +75,3 @@ there is implementation for F>1 introduced on date 13 jan 2016
 
 NOTE: In order to compile with the chosen mutation scheme, please copy the chosen file to dep.cpp and then compile
 TODO: currently PATHRELINKING,RANDOMINDIVIDUAL,COMPLETELYRANDOM do not compile anymore for few errors due to some updates
-
-----------------------------------------------------
-
-VERSION HISTORY:
-
-v1.0.0 - uploaded the 12 jun 2015 - first version
-v1.0.1 - uploaded the 03 nov 2015 - differential mutation with insertions' generators added (dep.cpp.INSERTIONS)
-v1.0.2 - uploaded the 16 nov 2015 - sorting sequence (instead of decomposition) on insertions (modified dep.cpp.INSERTIONS)
-v1.0.3 - uploaded the 19 nov 2015 - differential mutation with exchanges' generators added (dep.cpp.EXCHANGES)
-v1.0.4 - uploaded the 24 nov 2015 - limited/bounded version for randis,randss (dep.cpp.INSERTIONS,dep.cpp.EXCHANCES)
-v1.0.5 - uploaded the 24 nov 2015 - bug fix = there was rounding instead of ceil on the diffMutations (dep.cpp.ORIGINAL,dep.cpp.INSERTIONS,dep.cpp.EXCHANGES,dep.cpp)
-v1.0.6 - uploaded the 10 dec 2015 - more entropy on dep.cpp.INSERTIONS (previous version is now in dep.cpp.INSERTIONS_FASTER_LESS_ENTROPY)
-v1.0.7 - uploaded the 15 dec 2015 - implemented the case F>1 for adjacent swaps (dep.cpp and dep.cpp.ORIGINAL), added the --minf,--maxf,--f parameter (currently maxf>1 does not work with other generators or other mutations), the output file also write minf,maxf, the save mechanism also saves minf,maxf
-v1.0.8 - uploaded the 07 jan 2016 - bug fix for fixed f, insertions works only with F<=1, added python library for small experiments
-v1.0.9 - uploaded the 13 jan 2016 - exchanges with F>1 implemented, reindentation everywhere, updated plib, minf/maxf renamed to fmin/fmax, bugfix on makefile
-

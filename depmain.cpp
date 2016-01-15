@@ -35,7 +35,7 @@ void preResume(char* filename);
 void defaultMaxnfes();
 
 
-int main(int argc, char** argv) {   
+int main(int argc, char** argv) {
 	//set default parameters for dep
 	depDefaultParameters();
 	//read arguments, set parameters and load pfsp-tft instance
@@ -75,6 +75,7 @@ int main(int argc, char** argv) {
 	cout << " -        instance = " << instance << endl;
 	cout << " -               n = " << n << endl;
 	cout << " -               m = " << m << endl;
+	cout << " -             gen = " << generators << endl;
 	cout << " -             out = " << out << endl;
 	cout << " -         maxnfes = " << maxnfes << endl;
 	cout << " -         maxTime = " << maxTime << endl;
@@ -163,6 +164,7 @@ void usage() {
 	cout << "-------------" << endl;
 	cout << "DEP USAGE:" << endl;
 	cout << "(1) dep INSTANCE_FILE OUTPUT_FILE" << endl;
+	cout << "    [--gen STR3 (asw,ins,exc,ins2) NOTE: ins2 are faster insertions with less entropy]" << endl;
 	cout << "    [--seed UINT]" << endl;
 	cout << "    [--maxnfes INT]" << endl;
 	cout << "    [--np INT]" << endl;
@@ -260,6 +262,9 @@ void readArguments(int argc, char** argv) {
 			} else if (strcmp(argv[i],"--maxtime")==0) {
 				sscanf(argv[i+1],"%u",&maxTime);
 				i += 2;
+			} else if (strcmp(argv[i],"--gen")==0) {
+				strncpy(generators,argv[i+1],3);
+				i += 2;
 			}
 		}
 	}
@@ -272,7 +277,7 @@ void writeResults() {
 	FILE* f = fopen(out,"r");
 	if (!f) {
 		f = fopen(out,"w");
-		fprintf(f,"exe,instance,n,m,maxnfes,maxtime,seed,np,finit,fmin,fmax,alpha,heu,ls,frfactor"); //input
+		fprintf(f,"exe,instance,n,m,gen,maxnfes,maxtime,seed,np,finit,fmin,fmax,alpha,heu,ls,frfactor"); //input
 		fprintf(f,",fgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,improvingSteps,lsImprovingSteps,execTime,minStageLength,maxStageLength,avgStageLength,improvingStages,nls,nfesls,nImprovingls,totImprovingls,gbestls,gbest\n"); //output
 	}
 	fclose(f);
@@ -293,8 +298,8 @@ void writeResults() {
 	double2str(avgStageLength,savgStageLength);
 	f = fopen(out,"a");
 	//input print
-	fprintf(f,"%s,%s,%d,%d,%d,%d,%u,%d,%s,%s,%s,%s,%d,%d,%s",
-				exe,instance,n,m,maxnfes,maxTime,seed,np,sfinit,sfmin,sfmax,salpha,heu,ls,sfrfactor);
+	fprintf(f,"%s,%s,%d,%d,%s,%d,%d,%u,%d,%s,%s,%s,%s,%d,%d,%s",
+				exe,instance,n,m,generators,maxnfes,maxTime,seed,np,sfinit,sfmin,sfmax,salpha,heu,ls,sfrfactor);
 	//output print
 	fprintf(f,",%d,%d,%d,%d,%d,%d,%d,%d,%d,%lu,%d,%d,%s,%d,%d,%d,%d,%d,%d,%s\n",
 			fgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,

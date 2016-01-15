@@ -25,6 +25,9 @@ extern double frfactor;
 extern double fmin;
 extern double fmax;
 
+//generating set indication for differential mutation
+extern char generators[5];
+
 //global best declaration
 extern int* gbest;
 extern int fgbest;

@@ -3,7 +3,8 @@
 #include "problem.h"
 #include "random.h"
 #include "timer.h"
-#include <cstring>   //memcpy, memset, memmove
+#include "utils.h"
+#include <cstring>   //memcpy, memset, memmove, strcpy, strcmp
 #include <climits>   //INT_MAX
 #include <unistd.h>  //alarm
 #include <cstdio>    //FILE, fprintf
@@ -35,6 +36,9 @@ double frfactor;
 //min/max value definitions for scale factor f (used by jde rule and declared in dep.h)
 double fmin;
 double fmax;
+
+//generating set indication for differential mutation (declared in dep.h)
+char generators[5];
 
 //global best definition (declared in dep.h)
 int* gbest;
@@ -94,7 +98,7 @@ static double* sfy;
 static double* sfs; //sfx-sfy
 
 //inner temporary memory for diffMutation/crossover
-static int* tmpint;  //length = n*(n-1)/2 + 2*n (one sorting sequence + two permutations)
+static int* tmpint;
 
 //inner bool flag indicating if fitnesses are all equal
 static bool sameFitness;
@@ -133,15 +137,12 @@ static int diameter;
 //relative deviation of y wrt x
 #define REL_DEV(y,x) (((y)-(x))/(double)(x))
 
-
 //inner functions definitions
 void depSave();
 inline void updateGbest(int* x, int fx);
 inline bool termination();
 void popInit();
 bool popEvolve();
-inline void randbs(int* s, int& l, int* x, int* ainv, int nainv);
-void diffMutation(int i);
 inline void tpii(int* ch, int* fa, int* mo, int* ifa, int c1, int c2);
 void crossover(int i);
 void selection(int i);
@@ -161,6 +162,12 @@ inline void bwdins2(int* x, int i, int j);
 #endif
 inline void ins(int* x, int i, int j);
 bool popForcedRestart();
+
+//import some code
+#include "diffMutation.cpp"
+
+//function pointers definitions
+void (*diffMutation)(int);
 
 
 //online printing functions
@@ -184,6 +191,7 @@ void depDefaultParameters() {
 	frfactor = 0.25;
 	fmin = 0.1; //as standard jde rule
 	fmax = 1.0; //as standard jde rule
+	strcpy(generators,"asw");
 #endif
 #ifdef MAKESPAN
 	np = 20;
@@ -194,6 +202,7 @@ void depDefaultParameters() {
 	frfactor = 0.25;
 	fmin = 0.1; //as standard jde rule
 	fmax = 1.0; //as standard jde rule
+	strcpy(generators,"asw");
 #endif
 }
 
@@ -264,8 +273,6 @@ void depAlloc() {
 	sfs = new double[2*np];
 	sfx = sfs;
 	sfy = sfx+np;
-	//temporary diffMutation/crossover memory
-	tmpint = new int[n*(n-1)/2+2*n]; //one sorting sequence + two permutations
 	//set the permutation byte size
 	permByteSize = sizeof(int)*n;
 	//lsHistory
@@ -273,8 +280,35 @@ void depAlloc() {
 	memset(lsHistory,0,permByteSize); //all zeros
 	//init to false the save flag
 	haveToSave = false;
-	//init the diameter
-	diameter = n*(n-1)/2; //VALID FOR ADJACENT SWAPS!!!
+	//init function pointers, diameter, temporary memory basing on generators
+	if (strcmp(generators,"asw")==0) {			//ADJACENT SWAPS - BUBBLE SORT
+		diffMutation = diffMutationBS;
+		diameter = n*(n-1)/2;
+		tmpint = new int[n*(n-1)/2+2*n]; //one sorting sequence + two permutations (consider also the crossover)
+	} else if (strcmp(generators,"ins")==0) {	//INSERTIONS - INSERTION SORT
+		diffMutation = diffMutationIS;
+		diameter = n-1;
+		tmpint = new int[6*n]; //one insertions sequence (2*n) + four permutations (consider also the crossover)
+		if (finit>1.0 || fmin>1.0 || fmax>1.0) { //check f params for insertions!
+			cerr << "FINIT, MINF, MAXF HAS TO BE <= 1.0 FOR INSERTIONS!!!" << endl;
+			exit(EXIT_FAILURE);
+		}
+	} else if (strcmp(generators,"exc")==0) {	//EXCHANGES - SELECTION SORT
+		diffMutation = diffMutationSS;
+		diameter = n-1;
+		tmpint = new int[n*n+3*n]; //1 matrix cycles + 1 exchanges seq. + 1 perms. (consider also the crossover)
+	} else if (strcmp(generators,"ins2")==0) {
+		diffMutation = diffMutationIS2;		//INSERTIONS 2 - INSERTION SORT FASTER BUT WITH LESS ENTROPY
+		diameter = n-1;
+		tmpint = new int[5*n]; //one insertions sequence (2*n) + three permutations (consider also the crossover)
+		if (finit>1.0 || fmin>1.0 || fmax>1.0) { //check f params for insertions!
+			cerr << "FINIT, MINF, MAXF HAS TO BE <= 1.0 FOR INSERTIONS!!!" << endl;
+			exit(EXIT_FAILURE);
+		}
+	} else {									//error
+		cerr << "ERROR: " << generators << " is not one of \"asw,ins,exc,ins2\"" << endl;
+		exit(EXIT_FAILURE);
+	}
 	//done
 }
 
@@ -415,217 +449,6 @@ bool popEvolve() {
 	ngen++;
 	//termination has not been triggered so return true
 	return true;
-	//done
-}
-
-
-//s/l = sequence that sorts x, ainv/nainv = precomputed adjacent inversions of x
-inline void randbs(int* s, int& l, int* x, int* ainv, int nainv) {
-	int i,j,t;
-	//initialize sequence length to 0
-	l = 0;
-	//sorting loop
-	while (nainv>0) {
-		//randomly select an adjacent inversion (i,j)=(i,i+1)
-		t = irand(nainv);
-		i = ainv[t];
-		j = i+1;
-		//remove (i,j), i.e. i, from the list of adjacent inversions, i.e. ainv
-		ainv[t] = ainv[--nainv];
-		//add previous inversion, i.e. (i-1,i)=(t,i), to ainv if the case
-		t = i-1;
-		if (i>0 && x[t]<x[i] && x[t]>x[j])
-			ainv[nainv++] = t;
-		//add next inversion, i.e. (i,i+1)=(j,t), to ainv if the case
-		t = j+1;
-		if (t<n && x[t]<x[i] && x[t]>x[j])
-			ainv[nainv++] = j;
-		//apply the swap (i,j) to x
-		t = x[i];
-		x[i] = x[j];
-		x[j] = t;
-		//save the swap in s (only i)
-		s[l++] = i;
-	}
-	//done
-}
-
-
-//differential mutation of individual i
-void diffMutation(int i) {
-	//DE/rand/1: y1[i] = x[r0] + F * (x[r1] - x[r2])
-	//(0) initialize variables
-	int r0,r1,r2,t,k,j,w,*p,*ixx,*pt,*pp,*p0;
-	double tempDouble;                           //temp variable for ceil rounding
-	static int* ss = tmpint;                     //use the temp memory (sorting sequence)
-	static int* z = tmpint+(n*(n-1)/2);          //use the temp memory (just at right of ss)
-	static int* ainv = z+n;                      //use the temp memory (just at right of z)
-//int mydebug;//debug
-	//(1) get 3 different indexes r0,r1,r2 different also from i
-	threeRandIndicesDiffFrom(np,i,r0,r1,r2);
-	//(2) compute scale factor using jde rule
-	sfy[i] = urand()<.1 ? fmin+(fmax-fmin)*urandi() : sfx[i];
-	//(3) check and handle the easy case F=1
-	if (sfy[i]==1.) {
-		//begin case F=1
-		//compute y1[i] = x[r0] + (x[r1] - x[r2]) = x[r0] * x[r2]^-1 * x[r1]
-		p = y1[i];
-		p0 = x[r0];
-		ixx = ix[r2];
-		pp = x[r1];
-		for (j=0; j<n; j++)
-			p[j] = p0[ixx[pp[j]]];
-#ifdef MYDEBUG
-		int myp[n];
-		for (j=0; j<n; j++)
-			myp[j] = x[r0][ix[r2][x[r1][j]]];
-		for (j=0; j<n; j++)
-			if (y1[i][j]!=myp[j]) {
-				cout << "Problem with the case F=1" << endl;
-				exit(1);
-			}
-#endif
-		//nothing else to do (this is an easy case) so return
-		return;
-		//end case F=1
-	}
-	//(4) distinguish the 2 cases F<1 and F>1
-	if (sfy[i]<1.) {
-		//begin case F<1: build z with its adjacent inversions, randbs on z, compute k, compute starting y
-		//(5a) build z with its adjacent inversions ainv/k (k is #ainv)
-		//z = x[r1]-x[r2] = x[r2]^-1*x[r1] = sort_seq(x[r1]^-1*x[r2]) (I already know x[r1]^-1=ix[r1])
-		ixx = ix[r1];
-		p = x[r2];
-		*z = ixx[*p];           //first outside the for ... it's the same of "z[0] = ixx[p[0]]"
-		k = 0;                  //init no. of adjacent inversions
-		pt = ainv;              //due because ainv is static
-		for (j=1; j<n; j++) {   //from the second to the last inside the for (so the if is ok)
-			z[j] = ixx[*++p];    //"ixx[*++p]" is the same of "ixx[p[j]]"
-			if (z[j-1]>z[j]) {
-				*pt++ = j-1;      //considering also next line, it is the same of "ainv[k++]=j-1"
-				k++;
-			}
-		}
-		//(6a) ss,w = sort_sequence(z) using randbs sorting loop
-		randbs(ss,w,z,ainv,k);
-		//(7a) compute k, i.e. where to truncate ss, basing on w and sfy[i] and using ceil rounding
-		k = tempDouble = sfy[i] * w;  //tempDouble needed to implement ceil rounding
-		if (k<tempDouble)             //this is to implement ceil rounding
-			k++;
-		//(8a) compute starting y: y1[i] becomes a copy of x[r0]
-		memcpy(y1[i],x[r0],permByteSize);
-		//end case F<1
-	} else {
-		//begin case F>1: build z with its adjacent inversions, compute starting y, randbs on z, compute k
-		//(5b) build z with its adjacent inversions ainv/k (k is #ainv)
-		//DEC(R) = SORT(E->X) + SORT(X->R) = X + SORT(X->R) = X + SORT(R^-1*X) = X + SORT(R*X)
-		//      thus the z to sort has to be R*(x[r1]-x[r2]) = R * x[r2]^-1 * x[r1]
-		//      note: the multiplication at left by R can be simulated, i.e. (R*X)[i] = R[X[i]] = n-1-X[i]
-		//(8b - anticipated) together compute also starting y, i.e. x[r0] * x[r2]^-1 * x[r1]
-		ixx = ix[r2];
-		p = x[r1];
-		*z = n-1-ixx[*p];       //first outside the for ... it's the same of "z[0] = n-1-ixx[p[0]]"
-		p0 = x[r0];             //for starting y (8b)
-		pp = y1[i];             //for starting y (8b)
-		*pp = p0[ixx[*p]];      //for starting y (8b), 1st outside for, equal to y1[i][0]=x[r0][ixx[x[r1][0]]]
-		k = 0;                  //init no. of adjacent inversions
-		pt = ainv;              //due because ainv is static
-		for (j=1; j<n; j++) {   //from the second to the last inside the for (so the if is ok)
-			z[j] = n-1-ixx[*++p];//"ixx[*++p]" is the same of "ixx[p[j]]"
-			pp[j] = p0[ixx[*p]]; //for starting y (8b), equal to "y1[i][j] = x[r0][ixx[x[r1][j]]]"
-			if (z[j-1]>z[j]) {
-				*pt++ = j-1;      //considering also next line, it is the same of "ainv[k++]=j-1"
-				k++;
-			}
-		}
-		//(6b) ss,w = sort_sequence(z) using randbs sorting loop
-		randbs(ss,w,z,ainv,k);
-#ifdef MYDEBUG
-		//I have to check that "x[r2]^-1 * x[r1] * ss = reverse_identity"
-		int myp[n];
-		for (j=0; j<n; j++)
-			myp[j] = ix[r2][x[r1][j]];
-		for (j=0; j<w; j++) {
-			t = myp[ss[j]];
-			myp[ss[j]] = myp[ss[j]+1];
-			myp[ss[j]+1] = t;
-		}
-		for (j=0; j<n; j++)
-			if (myp[j]!=n-1-j) {
-				cout << "Problem with case F>1" << endl;
-				exit(1);
-			}
-#endif
-		//(8b) compute k, i.e. where to truncate ss, basing on w and sfy[i] and using ceil rounding
-		//in this case (F>1), L=D-W, K = min{ceil(F*L),D}-L = min{ceil(F*(D-W)),D}-D+W
-		k = tempDouble = sfy[i]*(diameter-w);  //tempDouble needed to implement ceil rounding
-		if (k<tempDouble)                      //this is to implement ceil rounding
-			k++;
-		if (k>diameter)                        //this is the minimum part of the formula above
-			k = diameter;
-		k += w - diameter;                     //this is the last "-D+W" part
-//mydebug=w;//debug
-#ifdef MYDEBUG
-		if (k<0 || k>w) {
-			cout << "k is not ok in the case F>1" << endl;
-			exit(1);
-		}
-#endif
-		//end case F>1
-	}
-	//(9) apply the first k entries of ss to y1[i]
-	p = y1[i];
-	pt = ss;             //due beecause ss is a static variable
-	for (j=0; j<k; j++) {
-		w = *pt++;        //"*pt++" is the same of "ss[j]"
-		t = p[w];         //this line and the next two implement the adjacent swap
-		p[w] = p[w+1];
-		p[w+1] = t;
-	}
-#ifdef MYDEBUG
-	if (!permValid(y1[i],n)) {
-		cout<<"diffMutation y1["<<i<<"]"<<endl;
-		exit(1);
-	}
-	//to check the following please uncomment the two lines with the variable "mydebug" above
-	//check the correct number of generators
-	//int myz[n];    //put x[r1]^-1 * x[r2] in myz
-	//for (j=0; j<n; j++)
-	//   myz[j] = ix[r1][x[r2][j]];
-	//int myai[n];   //put the adj. inv. of myz in myai
-	//int mynai = 0;
-	//for (j=1; j<n; j++)
-	//   if (myz[j-1]>myz[j])
-	//      myai[mynai++] = j-1;
-	//int myss[n*n]; //put the sort. seq. of myz in myss
-	//int mylss;
-	//randbs(myss,mylss,myz,myai,mynai);
-	//int mygen;     //compute the no. of generators to check
-	//double mytd;
-	//mygen = mytd = sfy[i]*mylss;
-	//if (mygen<mytd)
-	//   mygen++;
-	//if (sfy[i]<1.) { //check if everything ok - case f<1
-	//   if (k!=mygen) {
-	//      cout << "Number of generators mismatch when F<1" << endl;
-	//      exit(1);
-	//   }
-	//} else {       //check if everything ok - case f>1
-	//   //L=D-W, K = min{ceil(F*L),D}-L = min{ceil(F*(D-W)),D}-D+W
-	//   if (mygen>diameter)
-	//      mygen = diameter;
-	//   int myl2 = mydebug; //length of 2nd part
-	//   int myl1 = diameter-myl2; //length of 1st part
-	//   if (myl1!=mylss) {
-	//      cout << "Problem with lengths when F>1" << endl;
-	//      exit(1);
-	//   }
-	//   if (mylss+k!=mygen) {
-	//      cout << "Number of generators mismatch when F>1" << endl;
-	//      exit(1);
-	//   }
-	//}
-#endif
 	//done
 }
 

@@ -32,10 +32,10 @@ problem_tft.o: problem.cpp problem.h tft.cpp
 problem_ms.o: problem.cpp problem.h makespan.cpp
 	$(CPP) -DMAKESPAN $(CPPFLAGS) $(INCLUDES) -c problem.cpp $(LFLAGS) $(LIBS) -o problem_ms.o
 
-dep_tft.o: dep.cpp dep.h save_resume.cpp
+dep_tft.o: dep.cpp dep.h diffMutation.cpp save_resume.cpp
 	$(CPP) -DTFT $(CPPFLAGS) $(INCLUDES) -c dep.cpp $(LFLAGS) $(LIBS) -o dep_tft.o
 
-dep_ms.o: dep.cpp dep.h save_resume.cpp
+dep_ms.o: dep.cpp dep.h diffMutation.cpp save_resume.cpp
 	$(CPP) -DMAKESPAN $(CPPFLAGS) $(INCLUDES) -c dep.cpp $(LFLAGS) $(LIBS) -o dep_ms.o
 
 DEPTFT_OBJECTS = SFMT.o random.o timer.o utils.o problem_tft.o dep_tft.o
