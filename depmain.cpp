@@ -377,7 +377,8 @@ void preResume(char* filename) {
 	for (j=0; j<sizeof(double); j++) {
 		nowarning = fscanf(fsav,"%u",&b);
 		bytes[j] = (unsigned char)b;
-	}   
+	}
+	nowarning = fscanf(fsav,"%s",generators);			  //generators 10quadris
 	bytes = (unsigned char*)&alpha;                       //alpha 11
 	for (j=0; j<sizeof(double); j++) {
 		nowarning = fscanf(fsav,"%u",&b);

@@ -70,7 +70,8 @@ void depSave() {
 	bytes = (unsigned char*)&fmax;            //fmax 10tris
 	for (j=0; j<sizeof(double); j++)
 		fprintf(fsav,"%u ",bytes[j]);
-	fprintf(fsav,"\n");   
+	fprintf(fsav,"\n");
+	fprintf(fsav,"%s\n",generators);		  //generators 10quadris
 	bytes = (unsigned char*)&alpha;           //alpha 11
 	for (j=0; j<sizeof(double); j++)
 		fprintf(fsav,"%u ",bytes[j]);
@@ -252,6 +253,7 @@ void depLoad(char* filename) {
 		nowarning = fscanf(fsav,"%u",&b);
 		bytes[j] = (unsigned char)b;
 	}
+	nowarning = fscanf(fsav,"%s",generators);			  //generators 10quadris
 	bytes = (unsigned char*)&alpha;                       //alpha 11
 	for (j=0; j<sizeof(double); j++) {
 		nowarning = fscanf(fsav,"%u",&b);
