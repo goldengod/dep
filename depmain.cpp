@@ -348,7 +348,7 @@ void writeResults() {
 #if defined(TFT) || defined(MAKESPAN)
 		fprintf(f,"exe,instance,n,m,gen,init,cross,sel,lsearch,restart,maxnfes,maxtime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor"); //input
 #endif
-#ifdef LOP
+#if defined(LOP) || defined(LOPCC)
 		fprintf(f,"exe,instance,n,gen,init,cross,sel,lsearch,restart,maxnfes,maxtime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor"); //input
 #endif
 		fprintf(f,",fgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,improvingSteps,lsImprovingSteps,execTime,minStageLength,maxStageLength,avgStageLength,improvingStages,nls,nfesls,nImprovingls,totImprovingls,gbestls,sfSuccAvg,sfSuccStd,sfSuccMin,sfSuccMax,crSuccAvg,crSuccStd,crSuccMin,crSuccMax,child1succ,child2succ,gbest\n"); //output
@@ -399,7 +399,7 @@ void writeResults() {
 	fprintf(f,"%s,%s,%d,%d,%s,%s,%s,%s,%s,%s,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s",
 				exe,instance,n,m,sgenerators,sinitialization,scrossover,sselection,slsearch,srestart,maxnfes,maxTime,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor);
 #endif
-#ifdef LOP
+#if defined(LOP) || defined(LOPCC)
 	fprintf(f,"%s,%s,%d,%s,%s,%s,%s,%s,%s,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s",
 				exe,instance,n,sgenerators,sinitialization,scrossover,sselection,slsearch,srestart,maxnfes,maxTime,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor);
 #endif
@@ -557,7 +557,7 @@ void defaultMaxnfes() {
 			maxnfes = 260316750;
 	}
 #endif
-#ifdef LOP
+#if defined(LOP) || defined(LOPCC)
 	//Ceberio et al. use: n^2 * (1000, 5000, 10000)
 	#define MAXNFES_MULTIPLIER 10000 //1000, 5000, 10000 (as in Ceberio et al)
 	maxnfes = n*n*MAXNFES_MULTIPLIER;

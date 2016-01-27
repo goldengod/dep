@@ -6,10 +6,10 @@ INCLUDES = -I"/usr/include"
 LFLAGS = -L"/usr/lib"
 LIBS = 
 
-all: deptft depms deplop testtft testms testlop
+all: deptft depms deplop deplopcc testtft testms testlop testlopcc
 
 clean:
-	rm *.o deptft depms deplop testtft testms testlop *.pyc
+	rm *.o deptft depms deplop deplopcc testtft testms testlop testlopcc *.pyc
 
 cleantilde:
 	rm *~
@@ -34,6 +34,9 @@ problem_ms.o: problem.cpp problem.h makespan.cpp
 	
 problem_lop.o: problem.cpp problem.h lop.cpp
 	$(CPP) -DLOP $(CPPFLAGS) $(INCLUDES) -c problem.cpp $(LFLAGS) $(LIBS) -o problem_lop.o
+
+problem_lopcc.o: problem.cpp problem.h lopcc.cpp
+	$(CPP) -DLOPCC $(CPPFLAGS) $(INCLUDES) -c problem.cpp $(LFLAGS) $(LIBS) -o problem_lopcc.o
 	
 DEPINCLUDES = depCommon.cpp depPopInit.cpp depDiffMutation.cpp depCrossover.cpp depSelection.cpp depLocalSearch.cpp depPopRestart.cpp
 
@@ -46,11 +49,16 @@ dep_ms.o: dep.cpp dep.h $(DEPINCLUDES) save_resume.cpp
 dep_lop.o: dep.cpp dep.h $(DEPINCLUDES) save_resume.cpp
 	$(CPP) -DLOP $(CPPFLAGS) $(INCLUDES) -c dep.cpp $(LFLAGS) $(LIBS) -o dep_lop.o
 
+dep_lopcc.o: dep.cpp dep.h $(DEPINCLUDES) save_resume.cpp
+	$(CPP) -DLOPCC $(CPPFLAGS) $(INCLUDES) -c dep.cpp $(LFLAGS) $(LIBS) -o dep_lopcc.o
+
 DEPTFT_OBJECTS = SFMT.o random.o timer.o utils.o problem_tft.o dep_tft.o
 
 DEPMS_OBJECTS = SFMT.o random.o timer.o utils.o problem_ms.o dep_ms.o
 
 DEPLOP_OBJECTS = SFMT.o random.o timer.o utils.o problem_lop.o dep_lop.o
+
+DEPLOPCC_OBJECTS = SFMT.o random.o timer.o utils.o problem_lopcc.o dep_lopcc.o
 
 deptft: depmain.cpp dep_tft.o $(DEPTFT_OBJECTS)
 	$(CPP) -DTFT -static $(CPPFLAGS) $(INCLUDES) depmain.cpp $(DEPTFT_OBJECTS) $(LFLAGS) $(LIBS) -lm -o deptft
@@ -60,6 +68,9 @@ depms: depmain.cpp dep_ms.o $(DEPMS_OBJECTS)
 	
 deplop: depmain.cpp dep_lop.o $(DEPLOP_OBJECTS)
 	$(CPP) -DLOP -static $(CPPFLAGS) $(INCLUDES) depmain.cpp $(DEPLOP_OBJECTS) $(LFLAGS) $(LIBS) -lm -o deplop
+	
+deplopcc: depmain.cpp dep_lopcc.o $(DEPLOPCC_OBJECTS)
+	$(CPP) -DLOPCC -static $(CPPFLAGS) $(INCLUDES) depmain.cpp $(DEPLOPCC_OBJECTS) $(LFLAGS) $(LIBS) -lm -o deplopcc
 
 testtft: test.cpp problem_tft.o utils.o random.o SFMT.o
 	$(CPP) -DTFT -static $(CPPFLAGS) $(INCLUDES) test.cpp problem_tft.o utils.o random.o SFMT.o $(LFLAGS) $(LIBS) -o testtft
@@ -69,4 +80,7 @@ testms: test.cpp problem_ms.o utils.o random.o SFMT.o
 
 testlop: test.cpp problem_lop.o utils.o random.o SFMT.o
 	$(CPP) -DLOP -static $(CPPFLAGS) $(INCLUDES) test.cpp problem_lop.o utils.o random.o SFMT.o $(LFLAGS) $(LIBS) -o testlop
+
+testlopcc: test.cpp problem_lopcc.o utils.o random.o SFMT.o
+	$(CPP) -DLOPCC -static $(CPPFLAGS) $(INCLUDES) test.cpp problem_lopcc.o utils.o random.o SFMT.o $(LFLAGS) $(LIBS) -o testlopcc
 

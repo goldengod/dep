@@ -44,14 +44,14 @@ void selection_alpha_1o1(int i) {
 #endif
 	}
 	//alpha-selection between y1[i]/x[i] (exchange pointers without copy)
-	//the manifest constants TFT/MAKESPAN/LOP are mutually exclusive
+	//the manifest constants TFT/MAKESPAN/LOP/LOPCC are mutually exclusive
 #ifdef TFT //minimization
 	if ( fy1[i]<fx[i] || urand()<alpha-REL_DEV(fy1[i],fx[i]) ) { //tie favors, in some way, x[i]
 #endif
 #ifdef MAKESPAN //minimization
 	if ( fy1[i]<=fx[i] || urand()<alpha-REL_DEV(fy1[i],fx[i]) ) { //tie favors, in some way, y1[i]
 #endif
-#ifdef LOP //maximization
+#if defined(LOP) || defined(LOPCC) //maximization
 	if ( fy1[i]>fx[i] || urand()<alpha+REL_DEV(fy1[i],fx[i]) ) { //tie favors, in some way, x[i]
 #endif
 		fx[i] = fy1[i];
@@ -149,7 +149,7 @@ void selection_crowding() {
 #ifdef MAKESPAN //minimization
 		if (fy1[i]<=new_fit[i_closest]) { //favors, in case of ties, the selected child
 #endif
-#ifdef LOP //maximization
+#if defined(LOP) || defined(LOPCC) //maximization
 		if (fy1[i]>new_fit[i_closest]) { //favors, in case of ties, the old population individual
 #endif
 			child_to_replace[i_closest] = i;

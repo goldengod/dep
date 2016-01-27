@@ -33,7 +33,7 @@ int evalUpdateGFC(int* x, int k);		//partial evaluation using GFC + update of th
 
 
 //BEGIN LOP PART
-#ifdef LOP
+#if defined(LOP) || defined(LOPCC)
 #define MAXIMIZATION
 extern int n;							//instance size
 extern int** h;							//i/o matrix (n x n)

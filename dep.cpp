@@ -130,7 +130,7 @@ bool (*popForcedRestart)(void);
 
 //set dep default parameters
 void depDefaultParameters() {
-//the manifest constants TFT/MAKESPAN/LOP are mutually exclusive
+//the manifest constants TFT/MAKESPAN/LOP/LOPCC are mutually exclusive
 #ifdef TFT
 	np = 100;
 	finit = 0.5;
@@ -170,6 +170,25 @@ void depDefaultParameters() {
 	strcpy(srestart,"randls");
 #endif
 #ifdef LOP
+	np = 100;
+	finit = 0.5;
+	crinit = 0.5;
+	alpha = 0.0; //NOTA QUI!!!
+	heu = 0; //non usata per lop
+	ls = L_LS; //non c'e' differenza fra L_LS e B_ls con il restart shrandls default di lop
+	frfactor = 0.25; //DA RIVEDERE!!!
+	ffmin = 0.1; //as standard jde rule
+	ffmax = 1.0; //as standard jde rule
+	crmin = 0.0; //as standard jde rule
+	crmax = 1.0; //as standard jde rule
+	strcpy(sgenerators,"asw");
+	strcpy(sinitialization,"randheu");
+	strcpy(scrossover,"obxcr");
+	strcpy(sselection,"alpha");
+	strcpy(slsearch,"ins");
+	strcpy(srestart,"shrandls");
+#endif
+#ifdef LOPCC
 	np = 100;
 	finit = 0.5;
 	crinit = 0.5;
