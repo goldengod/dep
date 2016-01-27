@@ -10,6 +10,7 @@ deptft FSP_INSTANCE_FILE CSV_OUTPUT_FILE --heu LR_FILE
 deplop LOP_INSTANCE_FILE CSV_OUTPUT_FILE
 
 FSP_INSTANCE_FILE, NEH_FILE, LR_FILE are contained in the directory "pfsp_problems"
+LOP_INSTANCE_FILE are contained in the directory "lop_problems"
 
 ----------------------------------------------------
 
