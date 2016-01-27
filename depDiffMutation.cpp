@@ -418,7 +418,7 @@ void randis(int* s, int& l, int* x, double f) {
 	for (i=0; i<ul; i++) {  //cost O(n) since ul+ll=n and both i and j advance of one step
 		while (j<ll && x[lis[j]]<x[u[i]])
 			j++;
-		su[i] = x[lis[j]]>x[u[i]] ? j : ll; //because j cannot reach ll in the while above
+		su[i] = j<ll && x[lis[j]]>x[u[i]] ? j : ll;
 	}
 	//initialize s true length
 	w = 0;
@@ -508,7 +508,7 @@ void randis(int* s, int& l, int* x, double f) {
 		for (int myi=0; myi<ul; myi++) {
 			while (myj<ll && x[lis[myj]]<x[u[myi]])
 				myj++;
-			mysu[myi] = x[lis[myj]]>x[u[myi]] ? myj : ll;
+			mysu[myi] = myj<ll && x[lis[myj]]>x[u[myi]] ? myj : ll;
 			int myb = mysu[myi]==ll ? n : lis[mysu[myi]];
 			int mya = mysu[myi]==0 ? 0 : lis[mysu[myi]-1];
 		}
@@ -528,7 +528,7 @@ void randis(int* s, int& l, int* x, double f) {
 	//if (!isSorted(x,n)) {
 	//   cout << "x is not sorted" << endl;
 	//   exit(1);
-	//s}
+	//}
 #endif
 	//done
 }
