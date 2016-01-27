@@ -16,195 +16,180 @@ using namespace std;
 #include "utils.h"
 #endif
 
+//definitions of variables declared in dep.h
+int np;						//population size
+double finit;				//initial scale factor
+double crinit;				//initial crossover probability (needed for obxcr crossover)
+double alpha;				//alpha value (needed for alpha selection)
+int heu;					//0=use heuristic in initialization, 1=do not use (needed for randheu initialization)
+int ls;						//0=no local search, 1=baldwinian local search, 2=lamarkian local search (needed for restarts with local search)
+double frfactor;			//used for forced restart (forced restart factor (0,1+) - restart forced if no gbest update for maxnfes*frfactor nfes)
+double ffmin;				//min value for F parameter on jde rule
+double ffmax;				//max value for F parameter on jde rule
+double crmin;				//min value for CR parameter on jde rule (needed for obxcr crossover)
+double crmax;				//max value for CR parameter on jde rule (needed for obxcr crossover)
+char sgenerators[10];		//generating set in differential mutation
+char sinitialization[10];	//initialization algorithm
+char scrossover[10];		//crossover algorithm
+char sselection[10];		//selection algorithm
+char slsearch[10];			//local search algorithm
+char srestart[10];			//restart algorithm
+int* gbest;					//global best so far
+int fgbest;					//fitness of the global best so far
+int nfesFoundAt;			//nfes when the global best has been found
+int stageFoundAt;			//stage when the global best has been found
+int nfes;					//number of evaluations performed
+int ngen;					//number of generations performed
+unsigned long execTime;		//for time save/resume scheme see save_resume.cpp
+int nrestarts;				//number of restart performed
+int nforcedrestarts;		//number of restart forced
+int minStageLength;			//min length of an evolution stage (between two consecutive restarts)
+int maxStageLength;			//max length of an evolution stage (between two consecutive restarts)
+double avgStageLength;		//avg length of an evolution stage
+int improvingStages;		//number of improving stages
+int nfesls;					//evaluations spent in local searches
+int nls;					//number of local searches performed
+int nImprovingls;			//number of improving local searches
+int totImprovingls;			//total delta of improving in local searches
+bool gbestls;				//true if the gbest has been obtained in a local search
+bool haveToSave;			//flag for saving execution state/memory
+int improvingSteps;			//number of improvements so far
+int lsImprovingSteps;		//number of improvements so far done by the local searches
+double sfSuccAvg;			//f statistic
+double sfSuccVar;			//f statistic
+double sfSuccMin;			//f statistic
+double sfSuccMax;			//f statistic
+double crSuccAvg;			//cr statistic (needed for obxcr)
+double crSuccVar;			//cr statistic (needed for obxcr)
+double crSuccMin;			//cr statistic (needed for obxcr)
+double crSuccMax;			//cr statistic (needed for obxcr)
+int child1succ;				//two childs statistic
+int child2succ;				//two childs statistic
 
-//population size definition (declared in dep.h)
-int np;
-
-//initial scale factor definition (declared in dep.h)
-double finit;
-
-//alpha value definition (declared in dep.h)
-double alpha;
-
-//heu and ls value definition (declared in dep.h)
-int heu;
-int ls;
-
-//frfactor definition (declared in dep.h)
-double frfactor;
-
-//min/max value definitions for scale factor f (used by jde rule and declared in dep.h)
-double fmin;
-double fmax;
-
-//generating set indication for differential mutation (declared in dep.h)
-char generators[5];
-
-//global best definition (declared in dep.h)
-int* gbest;
-int fgbest;
-int nfesFoundAt;
-int stageFoundAt;
-
-//number of evaluations and generation definition (declared in dep.h)
-int nfes;
-int ngen;
-
-//execution time definition (declared in dep.h)
-unsigned long execTime; //for time save/resume scheme see save_resume.cpp
-
-//number of restarts performed (declared in dep.h)
-int nrestarts;
-int nforcedrestarts; //forced
-
-//restarts statistics definition (declared in dep.h)
-int minStageLength;
-int maxStageLength;
-double avgStageLength;
-int improvingStages;
-
-//local search statistics definition (declared in dep.h)
-int nfesls;
-int nls;
-int nImprovingls;
-int totImprovingls;
-bool gbestls;
-
-//flag for saving execution state/memory (declared in dep.h)
-bool haveToSave;
-
-//number of improving steps performed definitino (declared in dep.h)
-int improvingSteps;
-int lsImprovingSteps;
-
-//inner population definition (Iliffe/display style)
-static int** x;
-static int* fx;
-static int** ix; //inverse population
-
-//inner temporary population definition (Iliffe/display style)
-static int** y1;
-static int* fy1;
-static int** y2;
-static int* fy2;
-
-//inner storage for main and temporary population (Iliffe/display style)
-static int* ps; //x-y1-y2-ix interleaved //population storage
-static int* fs; //fx-fy1-fy2          //fitness storage
-
-//inner scale factor main and temporary memory
-static double* sfx;
-static double* sfy;
-static double* sfs; //sfx-sfy
-
-//inner temporary memory for diffMutation/crossover
-static int* tmpint;
-
-//inner bool flag indicating if fitnesses are all equal
-static bool sameFitness;
-
-//inner generation when last restart happened (to count restart statistics)
-static int lastRestart;
-
-//inner fitness at the begin of the current stage (to count the number of improving stages)
-static int fgbestAtStageStart;
-
-//inner permutation size in bytes (used for memcpy)
-static int permByteSize;
-
-//inner local search history (only one perm)
-static int* lsHistory;
-
-//inner flag indicating local search is running or not
-static bool lsmode;
-
-//inner variable used to manage execTime in case of save/resume
-static unsigned long savedTime = 0; //for time save/resume scheme see save_resume.cpp
-
-//inner variables to manage forced restart
-static int nfesWhenToForceRestart;
-static int forcedRestartPeriod;
-
-//inner variable for diameter
-static int diameter;
-
-
-#ifdef GFC
-//Branchless min between x and y, bits has to be sizeof(int)*8-1 (see http://aggregate.org/MAGIC)
-#define FAST_MIN(x,y,bits) ((x)+((((y)-(x))>>(bits))&((y)-(x))))
-#endif
-
-//relative deviation of y wrt x
-#define REL_DEV(y,x) (((y)-(x))/(double)(x))
+//inner variables
+static int** x;				//array of main individuals (Iliffe/display style)
+static int* fx;				//array of main individuals' fitnesses (Iliffe/display style)
+static int** ix;			//array of main individuals' inverses (Iliffe/display style)
+static int** y1;			//array of childrens1 (Iliffe/display style)
+static int* fy1;			//array of childrens1's fitnesses (Iliffe/display style)
+static int** y2;			//array of childrens2 (Iliffe/display style)
+static int* fy2;			//array of childrens1's fitnesses (Iliffe/display style)
+static int* ps;				//population storage (Iliffe/display style) x-y1-y2-ix interleaved
+static int* fs;				//fitness storage (Iliffe/display style) fx-fy1-fy2 interleaved
+static double* sfx;			//main array of scale factors (Iliffe/display style)
+static double* sfy;			//temp array of scale factors (Iliffe/display style)
+static double* sfs;			//scale factor storage (Iliffe/display style) sfx-sfy interleaved
+static double* crx;			//main array of crossover probabilities (Iliffe/display style) (needed by obxcr)
+static double* cry;			//temp array of crossover probabilities (Iliffe/display style) (needed by obxcr)
+static double* crs;			//crossover probability storage (Iliffe/display style) crx-cry interleaved
+static int* tmpint;			//temporary memory
+static bool sameFitness;	//flag indicating if fitnesses are all equal
+static int lastRestart;		//generation when last restart happened (to count restart statistics)
+static int fgbestAtStageStart;//fitness at the begin of the current stage (to count the number of improving stages)
+static int permByteSize;	//permutation size in bytes (used for memcpy)
+static int* lsHistory;		//local search history (only one perm)
+static bool lsmode;			//flag indicating if local search is running or not
+static unsigned long savedTime = 0;//for time save/resume scheme see save_resume.cpp
+static int nfesWhenToForceRestart;//to manage forced restart
+static int forcedRestartPeriod;//to manage forced restart
+static int diameter;		//diameter of the generating set
 
 //inner functions definitions
-void depSave();
+bool popEvolve();
 inline void updateGbest(int* x, int fx);
 inline bool termination();
-void popInit();
-bool popEvolve();
-inline void tpii(int* ch, int* fa, int* mo, int* ifa, int c1, int c2);
-void crossover(int i);
-void selection(int i);
-inline void restartStatistics();
-bool popRestart();
-void vns4(int* x, int& fx);
-#ifdef GFC
-bool intStep(int* x, int& fx, bool first);
-#else
-bool intStep(int* x, int& fx);
-#endif
-void insStep(int* x, int& fx);
-#ifdef GFC
-inline void fwdins(int* x, int i, int j);
-inline void bwdins(int* x, int i, int j);
-inline void bwdins2(int* x, int i, int j);
-#endif
-inline void ins(int* x, int i, int j);
-bool popForcedRestart();
+void depSave();
 
 //import some code
-#include "diffMutation.cpp"
+#include "depCommon.cpp"
+#include "depPopInit.cpp"
+#include "depDiffMutation.cpp"
+#include "depCrossover.cpp"
+#include "depSelection.cpp"
+#include "depLocalSearch.cpp"
+#include "depPopRestart.cpp"
 
 //function pointers definitions
+void (*popInit)(void);
 void (*diffMutation)(int);
+void (*crossover)(int);
+void (*selection)(void);
+void (*localSearch)(int*,int&);
+bool (*popRestart)(void);
+bool (*popForcedRestart)(void);
 
-
-//online printing functions
+//import online printing functions
 #ifdef ONLINEPRINT
 #include "onlineprint.h"
 #endif
 
-
+//import save_resume code
 #include "save_resume.cpp"
+
 
 
 //set dep default parameters
 void depDefaultParameters() {
-//the manifest constants TFT and MAKESPAN are mutually exclusive
+//the manifest constants TFT/MAKESPAN/LOP are mutually exclusive
 #ifdef TFT
 	np = 100;
 	finit = 0.5;
+	crinit = 0.5; //anche se inutile dato che il crossover "standard" su pfsp non usa parametri
 	alpha = 0.01;
 	heu = 0; //sarebbe 1 ma metto 0 perche' devo passare il file euristica al main
 	ls = B_LS;
 	frfactor = 0.25;
-	fmin = 0.1; //as standard jde rule
-	fmax = 1.0; //as standard jde rule
-	strcpy(generators,"asw");
+	ffmin = 0.1; //as standard jde rule
+	ffmax = 1.0; //as standard jde rule
+	crmin = 0.0; //anche se non usato qui
+	crmax = 1.0; //anche se non usato qui
+	strcpy(sgenerators,"asw");
+	strcpy(sinitialization,"randheu");
+	strcpy(scrossover,"tpii");
+	strcpy(sselection,"alpha");
+	strcpy(slsearch,"vns4");
+	strcpy(srestart,"randls");
 #endif
 #ifdef MAKESPAN
 	np = 20;
 	finit = 0.5;
+	crinit = 0.5; //anche se inutile dato che il crossover "standard" su pfsp non usa parametri
 	alpha = 0.01;
 	heu = 0; //sarebbe 1 ma metto 0 perche' devo passare il file euristica al main
 	ls = L_LS;
 	frfactor = 0.25;
-	fmin = 0.1; //as standard jde rule
-	fmax = 1.0; //as standard jde rule
-	strcpy(generators,"asw");
+	ffmin = 0.1; //as standard jde rule
+	ffmax = 1.0; //as standard jde rule
+	crmin = 0.0; //anche se non usato qui
+	crmax = 1.0; //anche se non usato qui
+	strcpy(sgenerators,"asw");
+	strcpy(sinitialization,"randheu");
+	strcpy(scrossover,"tpii");
+	strcpy(sselection,"alpha");
+	strcpy(slsearch,"vns4");
+	strcpy(srestart,"randls");
+#endif
+#ifdef LOP
+	np = 100;
+	finit = 0.5;
+	crinit = 0.5;
+	alpha = 0.0; //NOTA QUI!!!
+	heu = 0; //non usata per lop
+	ls = L_LS; //non c'e' differenza fra L_LS e B_ls con il restart shrandls default di lop
+	frfactor = 0.25; //DA RIVEDERE!!!
+	ffmin = 0.1; //as standard jde rule
+	ffmax = 1.0; //as standard jde rule
+	crmin = 0.0; //as standard jde rule
+	crmax = 1.0; //as standard jde rule
+	strcpy(sgenerators,"asw");
+	strcpy(sinitialization,"randheu");
+	strcpy(scrossover,"obxcr");
+	strcpy(sselection,"alpha");
+	strcpy(slsearch,"ins");
+	strcpy(srestart,"shrandls");
 #endif
 }
+
 
 
 //main dep function
@@ -249,7 +234,8 @@ void dep() {
 }
 
 
-//allocate dep memory
+
+//allocate dep memory and decide function pointers
 void depAlloc() {
 	//gbest memory
 	gbest = new int[n];
@@ -273,6 +259,10 @@ void depAlloc() {
 	sfs = new double[2*np];
 	sfx = sfs;
 	sfy = sfx+np;
+	//main and temporary crossover probability memory
+	crs = new double[2*np];
+	crx = crs;
+	cry = crx+np;
 	//set the permutation byte size
 	permByteSize = sizeof(int)*n;
 	//lsHistory
@@ -280,37 +270,85 @@ void depAlloc() {
 	memset(lsHistory,0,permByteSize); //all zeros
 	//init to false the save flag
 	haveToSave = false;
-	//init function pointers, diameter, temporary memory basing on generators
-	if (strcmp(generators,"asw")==0) {			//ADJACENT SWAPS - BUBBLE SORT
+	//initialize popInit function pointer
+	if (strcmp(sinitialization,"randheu")==0)
+		popInit = popInit_randheu;
+	else {
+		cerr << "ERROR: the initialization \"" << sinitialization << "\" is not one of: \"randheu\"" << endl;
+		exit(EXIT_FAILURE);
+	}
+	//init diffMutation function pointer, diameter, temporary memory basing on generators
+	if (strcmp(sgenerators,"asw")==0) {			//ADJACENT SWAPS - BUBBLE SORT
 		diffMutation = diffMutationBS;
 		diameter = n*(n-1)/2;
 		tmpint = new int[n*(n-1)/2+2*n]; //one sorting sequence + two permutations (consider also the crossover)
-	} else if (strcmp(generators,"ins")==0) {	//INSERTIONS - INSERTION SORT
+	} else if (strcmp(sgenerators,"ins")==0) {	//INSERTIONS - INSERTION SORT
 		diffMutation = diffMutationIS;
 		diameter = n-1;
 		tmpint = new int[6*n]; //one insertions sequence (2*n) + four permutations (consider also the crossover)
-		if (finit>1.0 || fmin>1.0 || fmax>1.0) { //check f params for insertions!
+		if (finit>1.0 || ffmin>1.0 || ffmax>1.0) { //check f params for insertions!
 			cerr << "FINIT, MINF, MAXF HAS TO BE <= 1.0 FOR INSERTIONS!!!" << endl;
 			exit(EXIT_FAILURE);
 		}
-	} else if (strcmp(generators,"exc")==0) {	//EXCHANGES - SELECTION SORT
+	} else if (strcmp(sgenerators,"exc")==0) {	//EXCHANGES - SELECTION SORT
 		diffMutation = diffMutationSS;
 		diameter = n-1;
 		tmpint = new int[n*n+3*n]; //1 matrix cycles + 1 exchanges seq. + 1 perms. (consider also the crossover)
-	} else if (strcmp(generators,"ins2")==0) {
+	} else if (strcmp(sgenerators,"ins2")==0) {
 		diffMutation = diffMutationIS2;		//INSERTIONS 2 - INSERTION SORT FASTER BUT WITH LESS ENTROPY
 		diameter = n-1;
 		tmpint = new int[5*n]; //one insertions sequence (2*n) + three permutations (consider also the crossover)
-		if (finit>1.0 || fmin>1.0 || fmax>1.0) { //check f params for insertions!
+		if (finit>1.0 || ffmin>1.0 || ffmax>1.0) { //check f params for insertions!
 			cerr << "FINIT, MINF, MAXF HAS TO BE <= 1.0 FOR INSERTIONS!!!" << endl;
 			exit(EXIT_FAILURE);
 		}
 	} else {									//error
-		cerr << "ERROR: " << generators << " is not one of \"asw,ins,exc,ins2\"" << endl;
+		cerr << "ERROR: the generators \"" << sgenerators << "\" is not one of: \"asw,ins,exc,ins2\"" << endl;
+		exit(EXIT_FAILURE);
+	}
+	//initialize crossover function pointer
+	if (strcmp(scrossover,"tpii")==0) 			//TPII (DI AGA)
+		crossover = crossover_tpii;
+	else if (strcmp(scrossover,"obxcr")==0) 	//OBXCR (ORIGINALE DI LOP)
+		crossover = crossover_obxcr;
+	else if (strcmp(scrossover,"obx")==0) 		//OBX (RANDOM)
+		crossover = crossover_obx;
+	else {
+		cerr << "ERROR: the crossover \"" << scrossover << "\" is not one of \"tpii,obxcr,obx\"" << endl;
+		exit(EXIT_FAILURE);
+	}
+	//initialize selection function pointer
+	if (strcmp(sselection,"alpha")==0)
+		selection = selection_alpha;
+	else if (strcmp(sselection,"crowding")==0)
+		selection = selection_crowding;
+	else {
+		cerr << "ERROR: the selection \"" << sselection << "\" is not one of: \"alpha,crowding\"" << endl;
+		exit(EXIT_FAILURE);
+	}
+	//initialize localSearch function pointer
+	if (strcmp(slsearch,"vns4")==0)
+		localSearch = localSearch_vns4;
+	else if (strcmp(slsearch,"ins")==0)
+		localSearch = localSearch_ins;
+	else {
+		cerr << "ERROR: the localSearch \"" << slsearch << "\" is not one of: \"vns4,ins\"" << endl;
+		exit(EXIT_FAILURE);
+	}
+	//initialize restart function pointers
+	if (strcmp(srestart,"randls")==0) {
+		popRestart = popRestart_randls;
+		popForcedRestart = popForcedRestart_randls;
+	} else if (strcmp(srestart,"shrandls")==0) {
+		popRestart = popRestart_shrandls;
+		popForcedRestart = popForcedRestart_shrandls;
+	} else {
+		cerr << "ERROR: the restart \"" << srestart << "\" is not one of: \"randls,shrandls\"" << endl;
 		exit(EXIT_FAILURE);
 	}
 	//done
 }
+
 
 
 //deallocate dep memory
@@ -323,95 +361,11 @@ void depFree() {
 	delete[] fs;
 	delete[] ix;
 	delete[] sfs;
+	delete[] crs;
 	delete[] tmpint;
 	delete[] lsHistory;
 }
 
-
-//update global best
-inline void updateGbest(int* x, int fx) {
-	if (fx<fgbest) {
-		fgbest = fx;
-		memcpy(gbest,x,permByteSize);
-		nfesFoundAt = nfes;
-		stageFoundAt = nrestarts;
-		gbestls = lsmode;
-		nfesWhenToForceRestart = nfes + forcedRestartPeriod;
-		improvingSteps++;
-		if (lsmode)
-			lsImprovingSteps++;
-#ifdef ONLINEPRINT
-		bestPrint();
-#endif
-#ifdef MYDEBUG
-		if (!permValid(gbest,n)) {
-			cout<<"updateGbest gbest"<<endl;
-			exit(1);
-		}
-#endif
-	}
-}
-
-
-//check if max nfes has been exceeded
-inline bool termination() {
-	return nfes>=maxnfes || (maxTime>0 && getTimer()>=maxTime); //also time in milliseconds!!!
-}
-
-
-//initialize population
-void popInit() {
-	//init nfes and fgbest
-	nfes = 0;
-	fgbest = INT_MAX; //+inf
-	//random population initialization apart one individual from heuristic
-	for (int i=0; i<np; i++) {
-		if (i==0 && heu==1)
-			memcpy(x[0],heup,permByteSize); //heuristic permutation
-		else
-			prand(n,x[i]); //random
-		fx[i] = eval(x[i]);
-		nfes++;
-		updateGbest(x[i],fx[i]);
-		sfx[i] = finit;
-		for (int k=0; k<n; k++) //ix[i] = inverse of x[i]
-			ix[i][x[i][k]] = k;
-#ifdef MYDEBUG
-		if (!permValid(x[i],n)) {
-			cout<<"popInit x["<<i<<"]"<<endl;
-			exit(1);
-		}
-		if (!permValid(ix[i],n)) {
-			cout<<"popInit ix["<<i<<"]"<<endl;
-			exit(1);
-		}
-#endif
-	}
-	//init ngen, nrestarts, samefitness
-	ngen = 1; //initialization was the first generation
-	nrestarts = 0;
-	nforcedrestarts = 0;
-	sameFitness = false;
-	//init restart statistics variables
-	lastRestart = 0;
-	minStageLength = maxnfes; //it's impossible to be more
-	maxStageLength = 0; //it's impossible to be less
-	avgStageLength = 0.;
-	fgbestAtStageStart = INT_MAX; //for sure at stage end it will be better
-	improvingStages = 0;
-	//init local search statistics variables
-	nfesls = 0;
-	nls = 0;
-	nImprovingls = 0;
-	totImprovingls = 0;
-	//init lsmode to false
-	lsmode = false;
-	//init variables for forced restart
-	nfesWhenToForceRestart = forcedRestartPeriod = maxnfes*frfactor;
-	//init improving steps
-	improvingSteps = lsImprovingSteps = 0;
-	//done
-}
 
 
 //evolve population
@@ -440,11 +394,7 @@ bool popEvolve() {
 		//population loop done
 	}
 	//selection and compute sameFitness
-	sameFitness = true;
-	for (i=0; i<np; i++) {
-		selection(i);
-		sameFitness &= !(fx[i]-fx[0]); //it's the same of "sameFitness = sameFitness && fx[i]==fx[0]"
-	}
+	selection();
 	//increment generation counter
 	ngen++;
 	//termination has not been triggered so return true
@@ -453,584 +403,37 @@ bool popEvolve() {
 }
 
 
-//crossover TPII
-inline void tpii(int* ch, int* fa, int* mo, int* ifa, int c1, int c2) {
-	//child takes [c1,c2] from father, the other from mother using the order in mother
-	//ifa is the inverse of fa
-	//variables
-	int k,t;
-	//father part (between c1 and c2, both included)
-	memcpy(ch+c1,fa+c1,sizeof(int)*(c2-c1+1));
-	//left part (before c1) from mother (with j initialization to zero)
-	//j = 0; //... needed by classical impl commented
-	for (k=0; k<c1; k++) {
-		while (ifa[(t=*mo++)]>=c1 && ifa[t]<=c2); //... same of what is commented below
-		//do {
-		//   t = *mo++; //... same as t = mo[j++];
-		//} while (ifa[t]>=c1 && ifa[t]<=c2);
-		*ch++ = t; //... same as ch[k] = t;
-	}
-	//right part (after c2) from mother (j was already set to the right position)
-	ch += c2-c1; //... now ch is &ch_original[c2]
-	for (k=c2+1; k<n; k++) {
-		while (ifa[(t=*mo++)]>=c1 && ifa[t]<=c2); //... same of what is commented below
-		//do {
-		//   t = *mo++; //... same as t = mo[j++];
-		//} while (ifa[t]>=c1 && ifa[t]<=c2);
-		*++ch = t; //... same as ch[k] = t; //note that ch before the for was set to &ch_original[c2]
-	}
-	//done
-}
-
-
-//crossover of individual
-void crossover(int i) {
-	//TWO POINT CROSSOVER OF AGA: it produces two sons y1[i], y2[i] from the parents x[i], y1[i]
-	//a son takes [c1,c2] from father, the other from mother using the order in mother
-	//variables
-	static int* tch = tmpint;     //temporary child for offspring 2
-	static int* imut = tmpint+n;  //mutant inverse for offspring 2
-	int c1,c2,t,*p;
-	//two cut points c1<=c2 (also equal cutpoints)
-	c1 = irand(n);
-	c2 = irand(n);
-	if (c1>c2) {
-		t = c1;
-		c1 = c2;
-		c2 = t;
-	}
-	//(1) x[i] is father, y1[i] is mother, y2[i] becomes son
-	tpii(y2[i],x[i],y1[i],ix[i],c1,c2);
-#ifdef MYDEBUG
-	if (!permValid(y2[i],n)) {
-		cout<<"crossover y2["<<i<<"]"<<endl;
-		exit(1);
-	}
-#endif
-	//(2) y1[i] is father, x[i] is mother, y1[i] becomes son (computing father inverse and using a temp array)
-	p = y1[i];
-	for (t=0; t<n; t++)
-		imut[*p++] = t; //... same as imut[p[t]] = t;
-#ifdef MYDEBUG
-	if (!permValid(imut,n)) {
-		cout<<"crossover imut"<<endl;
-		exit(1);
-	}
-#endif
-	tpii(tch,y1[i],x[i],imut,c1,c2);
-	memcpy(y1[i],tch,permByteSize);
-#ifdef MYDEBUG
-	if (!permValid(y1[i],n)) {
-		cout<<"crossover y1["<<i<<"]"<<endl;
-		exit(1);
-	}
-#endif
-	//done
-}
-
-
-//selection of individual i
-void selection(int i) {
-	//variables
-	int* t;
-	//crisp pre-selection between y1[i]/y2[i] (exchange pointers without copy)
-	if (fy2[i]<fy1[i]) { //tie favors y1[i]
-		fy1[i] = fy2[i];
-		t = y1[i];
-		y1[i] = y2[i];
-		y2[i] = t;
-#ifdef MYDEBUG
-		if (!permValid(y1[i],n)) {
-			cout<<"selection1 y1["<<i<<"]"<<endl;
-			exit(1);
-		}
-		if (!permValid(y2[i],n)) {
-			cout<<"selection1 y2["<<i<<"]"<<endl;
-			exit(1);
-		}
-#endif
-	}
-	//alpha-selection between y1[i]/x[i] (exchange pointers without copy)
-	//the manifest constants TFT and MAKESPAN are mutually exclusive
-#ifdef TFT
-	if ( fy1[i]<fx[i] || urand()<alpha-REL_DEV(fy1[i],fx[i]) ) { //tie favors, in some way, x[i]
-#endif
-#ifdef MAKESPAN
-	if ( fy1[i]<=fx[i] || urand()<alpha-REL_DEV(fy1[i],fx[i]) ) { //tie favors, in some way, y1[i]
-#endif
-		fx[i] = fy1[i];
-		t = y1[i];
-		y1[i] = x[i];
-		x[i] = t; //t is now the new individual
-		sfx[i] = sfy[i];  //jde rule
-		//since there was replacement, update ix[i] by computing the inverse
-		int* inv = ix[i];
-		for (int k=0; k<n; k++)
-			inv[*t++] = k; //remember t is x[i] ... (inv[*t++] is the same of inv[t[k]])
-#ifdef MYDEBUG
-		if (!permValid(y1[i],n)) {
-			cout<<"selection2 y1["<<i<<"]"<<endl;
-			exit(1);
-		}
-		if (!permValid(x[i],n)) {
-			cout<<"selection2 x["<<i<<"]"<<endl;
-			exit(1);
-		}
-		if (!permValid(ix[i],n)) {
-			cout<<"selection2 ix["<<i<<"]"<<endl;
-			exit(1);
-		}
-#endif
-	}
-	//done
-}
-
-
-inline void restartStatistics() {
-	//compute restart statistics (call after increasing nrestarts)
-	int stageLength = ngen-lastRestart;
-	if (stageLength<minStageLength)
-		minStageLength = stageLength;
-	if (stageLength>maxStageLength)
-		maxStageLength = stageLength;
-	avgStageLength += (stageLength-avgStageLength)/nrestarts; //moving average (see wikipedia)
-	lastRestart = ngen;
-	if (fgbest<fgbestAtStageStart)
-		improvingStages++;
-	fgbestAtStageStart = fgbest;
-	//done
-}
-
-
-//restart population if restart has been triggered
-bool popRestart() {
-	//if all fitnesses are not the same do nothing
-	if (!sameFitness)
-		return false; //false since maxnfes was not exhausted
-	//the first (it's a best) individual is keeped and the other are randomized
-	for (int i=1; i<np; i++) {
-		prand(n,x[i]);
-		fx[i] = INT_MAX;  //+infinity
-		sfx[i] = finit;
-		//since there was replacement, update ix[i] by computing inverse
-		int* inv = ix[i];
-		int* t = x[i];
-		for (int k=0; k<n; k++)
-			inv[*t++] = k; //remember t is x[i] ... (inv[*t++] is the same of inv[t[k]])
-#ifdef MYDEBUG
-		if (!permValid(x[i],n)) {
-			cout<<"restart x["<<i<<"]"<<endl;
-			exit(1);
-		}
-		if (!permValid(ix[i],n)) {
-			cout<<"restart ix["<<i<<"]"<<endl;
-			exit(1);
-		}
-#endif
-	}
-	//anyway reset sfx[0]
-	sfx[0] = finit;
-	//local search (vns4) on x[0]
-	if (ls==B_LS) { //baldwin
-		memcpy(tmpint,x[0],permByteSize);
-		int ft = fx[0];
-		vns4(tmpint,ft);
-	} else if (ls==L_LS) {//lamarck
-		vns4(x[0],fx[0]);
-		for (int k=0; k<n; k++)
-			ix[0][x[0][k]] = k;
-	}
-	//update nfesWhenToForceRestart, thus if normal restart don't do forcedrestart
-	nfesWhenToForceRestart = nfes + forcedRestartPeriod;
-	//increase restarts counter
-	nrestarts++;
-	//restart statistics
-	restartStatistics();
-	//return true/false if budget of nfes was exhausted in the local search
-	return termination();
-	//done
-}
-
-
-//vns4 local search: full interchange ls (1st imp. style) + one step insert ls (best imp. style)
-void vns4(int* x, int& fx) {
-	//if x is in the history, return
-	int i;
-	for (i=0; i<n; i++)
-		if (lsHistory[i]!=x[i])
-			break;
-	if (i==n)
-		return;
-	//set lsmode
-	lsmode = true;
-	//save the fitness of the seed for statistics
-	int fseed = fx;
-	//perform full interchange + insertion step
-	int fprev;
-	do {
-		fprev = fx;
-#ifdef GFC
-		bool firstInt = true; //used the first time to call computeGFC
-		while (intStep(x,fx,firstInt))   //interchange local search (using gfc)
-			firstInt = false;
+//update global best
+inline void updateGbest(int* x, int fx) {
+#ifdef MINIMIZATION
+	if (fx<fgbest) {
 #else
-		while (intStep(x,fx));           //interchange local search (without gfc)
+	if (fx>fgbest) {
 #endif
-		if (termination()) //break the do-while if termination
-			break;
-		insStep(x,fx);                   //insertion step
-		if (termination()) //break the do-while if termination
-			break;
-	} while (fx<fprev);
-	//save x in the history
-	memcpy(lsHistory,x,permByteSize);
-	//update local search statistics
-	nls++;
-	if (fx<fseed) {
-		nImprovingls++;
-		totImprovingls += fseed-fx;
-	}
-	//unset lsmode
-	lsmode = false;
-	//done
-}
-
-
-#ifdef GFC
-//VERSIONI DI INTSTEP E INSSTEP CHE USANO GFC!!!!!!!!!!!!!!
-bool intStep(int* x, int& fx, bool first) {
-	//GFC VERSION
-	//one step of interchange local search
-	//1st improvement style using a random permutation
-	//variables
-	const static int bits = sizeof(int)*8-1;
-	static int* r = tmpint+n; //since tmpint is used to copy x in the case of B_LS
-	static int nm1 = n-1;
-	int i,j,ii,jj,t,fseed;
-	//compute gfc data of x BUT ONLY IF FIRST application in vns4!!!
-	if (first)
-		computeGFC(x);
-	//set fitness of the seed and get a random permutation
-	fseed = fx;
-	prand(n,r);
-	//scan for interchange moves
-	for (ii=0; ii<nm1; ii++) {
-		for (jj=ii+1; jj<n; jj++) {
-			//get i,j from the random permutation
-			i = r[ii];
-			j = r[jj];
-			//interchange jobs at positions i and j in x
-			t = x[i];
-			x[i] = x[j];
-			x[j] = t; //now t is equal to x[j]
-			//evaluate x using gfc, update gbest and check termination
-			fx = evalGFC(x,FAST_MIN(i,j,bits));
+		fgbest = fx;
+		memcpy(gbest,x,permByteSize);
+		nfesFoundAt = nfes;
+		stageFoundAt = nrestarts;
+		gbestls = lsmode;
+		nfesWhenToForceRestart = nfes + forcedRestartPeriod;
+		improvingSteps++;
+		if (lsmode)
+			lsImprovingSteps++;
+#ifdef ONLINEPRINT
+		bestPrint();
+#endif
 #ifdef MYDEBUG
-			if (fx!=eval(x)) {
-				cerr<<"intStep evaluation mismatch"<<endl;
-				exit(1);
-			}
+		if (!permValid(gbest,n)) {
+			cout<<"updateGbest gbest"<<endl;
+			exit(1);
+		}
 #endif
-			nfes++;
-			nfesls++;
-			updateGbest(x,fx);
-			if (termination())
-				return false;
-			//if better UPDATE gfc data and return true, x and fx are modified
-			if (fx<fseed) {
-				evalUpdateGFC(x,FAST_MIN(i,j,bits));
-				return true;
-			}
-			//if here, not better, so reset the interchange above by redoing it
-			x[j] = x[i];
-			x[i] = t; //remember that t was x[j]
-			//done
-		}
 	}
-	//if here, no return above, so fx has not been improved, thus reset fx and return false
-	fx = fseed;
-	return false;
-	//done
 }
 
 
-void insStep(int* x, int& fx) {
-	//GFC VERSION
-	//one step of insertion local search
-	//best improvement style, so no random permutation
-	//(i,j) means "move job at pos i to pos j"
-	//variables
-	int i,j,fbest,bi,bj,ft;
-	//no need for computing gfc data since intStep did it!!!
-	//computeGFC(x)
-	//init fbest to fx of the seed
-	fbest = fx;
-	//scan for insertion by doing rightmost insertions before
-	for (i=n-1; i>=0; i--) {
-		for (j=i+1; j<n; j++) { //do (i,j) and (j,i)
-			//(i,j), since i<j for sure this is a forward insertion
-			fwdins(x,i,j);
-			//evaluate x using gfc, update gbest and check termination
-			ft = evalGFC(x,i); //since i<j
-#ifdef MYDEBUG
-			if (ft!=eval(x)) {
-				cerr<<"insStep evaluation mismatch"<<endl;
-				exit(1);
-			}
-#endif
-			nfes++;
-			nfesls++;
-			updateGbest(x,ft);
-			if (termination())
-				return;
-			//update fbest,bi,bj if better ft is better
-			if (ft<fbest) { //with <= I simulate < with the scan from 0 to n
-				fbest = ft;
-				bi = i;
-				bj = j;
-			}
-			//before doing (j,i) check if it's case that (j,i)!=(i,j)
-			if (i+1!=j) { //!= means <
-				//perform two times (j,i): one to undo (i,j) and one to do (j,i)
-				bwdins2(x,j,i);
-				//evaluate x using gfc, update gbest and check termination
-				ft = evalGFC(x,i); //since i<j
-				nfes++;
-				nfesls++;
-				updateGbest(x,ft);
-				if (termination())
-					return;
-				//update fbest,bi,bj if better ft is better
-				if (ft<fbest) { //with <= I simulate < with the scan from 0 to n
-					fbest = ft;
-					bi = j; //inverted since the insertion is (j,i)
-					bj = i; //inverted since the insertion is (j,i)
-				}
-				//undo (j,i) by doing (i,j)
-				fwdins(x,i,j);
-			} else //in the case that (j,i) was not performed, simply undo (i,j) by doing (j,i)
-				bwdins(x,j,i);
-			//done both (i,j) and (j,i)
-		}
-	}
-	//if there was an improvement wrt the seed solution, update the solution by doing (bi,bj) insertion
-	if (fbest<fx) {
-		ins(x,bi,bj);
-		fx = fbest;
-	}
-	//done
-}
-
-#else
-
-//VERSIONI DI INTSTEP E INSSTEP CHE ***NON*** USANO GFC!!!!!!!!!!!!!!
-bool intStep(int* x, int& fx) {
-	//NO-GFC VERSION
-	//one step of interchange local search
-	//1st improvement style using a random permutation
-	//variables
-	static int* r = tmpint+n; //since tmpint is used to copy x in the case of B_LS
-	static int nm1 = n-1;
-	int i,j,ii,jj,t,fseed;
-	//set fitness of the seed and get a random permutation
-	fseed = fx;
-	prand(n,r);
-	//scan for interchange moves
-	for (ii=0; ii<nm1; ii++) {
-		for (jj=ii+1; jj<n; jj++) {
-			//get i,j from the random permutation
-			i = r[ii];
-			j = r[jj];
-			//interchange jobs at positions i and j in x
-			t = x[i];
-			x[i] = x[j];
-			x[j] = t; //now t is equal to x[j]
-			//evaluate x, update gbest and check termination
-			fx = eval(x);
-			nfes++;
-			nfesls++;
-			updateGbest(x,fx);
-			if (termination())
-				return false;
-			//if better return true, x and fx are modified
-			if (fx<fseed)
-				return true;
-			//if here, not better, so reset the interchange above by redoing it
-			x[j] = x[i];
-			x[i] = t; //remember that t was x[j]
-			//done
-		}
-	}
-	//if here, no return above, so fx has not been improved, thus reset fx and return false
-	fx = fseed;
-	return false;
-	//done
-}
-
-
-void insStep(int* x, int& fx) {
-	//NO-GFC VERSION
-	//one step of insertion local search
-	//best improvement style, so no random permutation
-	//(i,j) means "move job at pos i to pos j"
-	//variables
-	int i,j,fbest,bi,bj,ft;
-	//init fbest to fx of the seed
-	fbest = fx;
-	//scan for insertion moves in the same order of GFC version
-	for (i=n-1; i>=0; i--) {
-		for (j=i+1; j<n; j++) {
-			ins(x,i,j);
-			ft = eval(x);
-			nfes++;
-			nfesls++;
-			updateGbest(x,ft);
-			if (termination())
-				return;
-			if (ft<fbest) {
-				fbest = ft;
-				bi = i;
-				bj = j;
-			}
-			ins(x,j,i);
-			if (i+1!=j) {
-				ins(x,j,i);
-				ft = eval(x);
-				nfes++;
-				nfesls++;
-				updateGbest(x,ft);
-				if (termination())
-					return;
-				if (ft<fbest) {
-					fbest = ft;
-					bi = j; //note that j and i are reversed here!!!
-					bj = i; //note that j and i are reversed here!!!
-				}
-				ins(x,i,j);
-			}
-		}
-	}
-	/*
-	for (i=n-1; i>=0; i--) {
-		for (j=n-1; j>=0; j--) {
-			if (i!=j && i!=j+1) { //(i,i+1)==(i+1,i) so avoid to redo
-				//perform the insertion (i,j) on x
-				ins(x,i,j);
-				//evaluate x, update gbest and check termination
-				ft = eval(x);
-				nfes++;
-				nfesls++;
-				updateGbest(x,ft);
-				if (termination())
-					return;
-				//update fbest,bi,bj if better ft is better
-				if (ft<fbest) {
-					fbest = ft;
-					bi = i;
-					bj = j;
-				}
-				//undo the insertion (i,j) on x by doing the insertion (j,i) on x
-				ins(x,j,i);
-			}
-		}
-	}
-	*/
-	//if there was an improvement wrt the seed solution, update the solution by doing (bi,bj) insertion
-	if (fbest<fx) {
-		ins(x,bi,bj);
-		fx = fbest;
-	}
-	//done
-}
-#endif
-
-
-#ifdef GFC
-inline void fwdins(int* x, int i, int j) {
-	//assume i<j and perform insertion (i,j) on x (this is a forward insertion)
-	int t = x[i];
-	memmove(x+i,x+i+1,sizeof(int)*(j-i));
-	x[j] = t;
-}
-
-
-inline void bwdins(int* x, int i, int j) {
-	//assume i>j and perform insertion (i,j) on x (this is a backward insertion)
-	int t = x[i];
-	memmove(x+j+1,x+j,sizeof(int)*(i-j));
-	x[j] = t;
-}
-
-
-inline void bwdins2(int* x, int i, int j) {
-	//assume i>j+1 and perform insertion (i,j) two times on x (these are two backward insertions)
-	//note that, if i==j+1 then x remains unchanged but this case is not handled here
-	int t1 = x[i-1];
-	int t2 = x[i];
-	memmove(x+j+2,x+j,sizeof(int)*(i-j-1));
-	x[j] = t1;
-	x[j+1] = t2;
-}
-#endif
-
-
-inline void ins(int* x, int i, int j) {
-	//perform insertion (i,j) on x assuming nothing on i and j
-	//(i,j) means "move job at pos i to pos j"
-	int t = x[i];
-	if (i<j) //forward
-		memmove(x+i,x+i+1,sizeof(int)*(j-i));
-	else //backward
-		memmove(x+j+1,x+j,sizeof(int)*(i-j));
-	x[j] = t;
-}
-
-
-bool popForcedRestart() {
-	//check if restart has to be forced, return if not the case
-	if (nfes<nfesWhenToForceRestart)
-		return false; //false since maxnfes was not exhausted
-	//find best individual
-	int ibest = 0;
-	int i;
-	for (i=1; i<np; i++)
-		if (fx[i]<fx[0])
-			ibest = i;
-	//restart population except ibest
-	for (i=0; i<np; i++) {
-		if (i!=ibest) {
-			prand(n,x[i]);
-			fx[i] = INT_MAX; //+inf
-			//update ix
-			int* inv = ix[i];
-			int* t = x[i];
-			for (int k=0; k<n; k++)
-				inv[*t++] = k; //remember t is x[i] ... (inv[*t++] is the same of inv[t[k]])
-#ifdef MYDEBUG
-			if (!permValid(x[i],n)) {
-				cout<<"forcedRestart x["<<i<<"]"<<endl;
-				exit(1);
-			}
-			if (!permValid(ix[i],n)) {
-				cout<<"forcedRestart ix["<<i<<"]"<<endl;
-				exit(1);
-			}
-#endif
-		}
-		sfx[i] = finit; //finit also for the best
-	}
-	//lamarckian local search (vns4) on x[ibest]
-	vns4(x[ibest],fx[ibest]);
-	for (int k=0; k<n; k++)
-		ix[ibest][x[ibest][k]] = k;
-	//update nfesWhenToForceRestart
-	nfesWhenToForceRestart = nfes + forcedRestartPeriod;
-	//update statistics
-	nrestarts++;
-	nforcedrestarts++;
-	restartStatistics();
-	//return true/false if budget of nfes was exhausted in the local search
-	return termination();
-	//done
+//check if max nfes has been exceeded
+inline bool termination() {
+	return nfes>=maxnfes || (maxTime>0 && getTimer()>=maxTime) || fgbest==fitbound;
 }
 

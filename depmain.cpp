@@ -10,6 +10,7 @@
 #include <csignal>   //signal, SIGALRM
 #include <unistd.h>  //alarm
 #include <climits>   //INT_MAX
+#include <cmath>	 //sqrt
 using namespace std;
 
 
@@ -38,7 +39,7 @@ void defaultMaxnfes();
 int main(int argc, char** argv) {
 	//set default parameters for dep
 	depDefaultParameters();
-	//read arguments, set parameters and load pfsp-tft instance
+	//read arguments, set parameters and load problem instance
 	readArguments(argc,argv);
 	//check if maxTime was set, in the case set maxnfes to +inf
 	if (maxTime>0)
@@ -74,16 +75,33 @@ int main(int argc, char** argv) {
 	cout << "               exe = " << exe << endl;
 	cout << " -        instance = " << instance << endl;
 	cout << " -               n = " << n << endl;
+#if defined(TFT) || defined(MAKESPAN)
 	cout << " -               m = " << m << endl;
-	cout << " -             gen = " << generators << endl;
+#endif
+	cout << " -        fitbound = " << fitbound << endl;
+	cout << " -    problem type = " <<
+#ifdef MINIMIZATION
+									   "minimization" << endl;
+#else
+									   "maximization" << endl;
+#endif
+	cout << " -             gen = " << sgenerators << endl;
+	cout << " -            init = " << sinitialization << endl;
+	cout << " -           cross = " << scrossover << endl;
+	cout << " -             sel = " << sselection << endl;
+	cout << " -         lsearch = " << slsearch << endl;
+	cout << " -         restart = " << srestart << endl;
 	cout << " -             out = " << out << endl;
 	cout << " -         maxnfes = " << maxnfes << endl;
 	cout << " -         maxTime = " << maxTime << endl;
 	cout << " -            seed = " << seed << endl;
 	cout << " -              np = " << np << endl;
 	cout << " -           finit = " << finit << endl;
-	cout << " -            fmin = " << fmin << endl;
-	cout << " -            fmax = " << fmax << endl;
+	cout << " -            fmin = " << ffmin << endl;
+	cout << " -            fmax = " << ffmax << endl;
+	cout << " -          crinit = " << crinit << endl;
+	cout << " -           crmin = " << crmin << endl;
+	cout << " -           crmax = " << crmax << endl;
 	cout << " -           alpha = " << alpha << endl;
 	cout << " -             heu = " << heu << endl;
 	cout << " -              ls = " << ls << " ";
@@ -135,6 +153,16 @@ int main(int argc, char** argv) {
 	cout << " -         gbestls = " << gbestls << endl;
 	cout << " -  improvingSteps = " << improvingSteps << endl;
 	cout << " -lsImprovingSteps = " << lsImprovingSteps << endl;
+	cout << " -       sfSuccAvg = " << sfSuccAvg << endl;
+	cout << " -       sfSuccStd = " << sqrt(sfSuccVar) << endl;
+	cout << " -       sfSuccMin = " << sfSuccMin << endl;
+	cout << " -       sfSuccMax = " << sfSuccMax << endl;
+	cout << " -       crSuccAvg = " << crSuccAvg << endl;
+	cout << " -       crSuccStd = " << sqrt(crSuccVar) << endl;
+	cout << " -       crSuccMin = " << crSuccMin << endl;
+	cout << " -       crSuccMax = " << crSuccMax << endl;
+	cout << " -      child1succ = " << child1succ << endl;
+	cout << " -      child2succ = " << child2succ << endl;
 	char stime[256];
 	millis2str(execTime,stime);
 	cout << " -        execTime = " << stime << endl;
@@ -164,14 +192,23 @@ void usage() {
 	cout << "-------------" << endl;
 	cout << "DEP USAGE:" << endl;
 	cout << "(1) dep INSTANCE_FILE OUTPUT_FILE" << endl;
-	cout << "    [--gen STR3 (asw,ins,exc,ins2) NOTE: ins2 are faster insertions with less entropy]" << endl;
+	cout << "    [--gen STR (asw,ins,exc,ins2) NOTE: ins2 are faster insertions with less entropy]" << endl;
+	cout << "    [--init STR (randheu)]" << endl;
+	cout << "    [--cross STR (tpii,obxcr,obx)]" << endl;
+	cout << "    [--sel STR (alpha,crowding)]" << endl;
+	cout << "    [--lsearch STR (vns4,ins)]" << endl;
+	cout << "    [--restart STR (randls,shrandls)]" << endl;
 	cout << "    [--seed UINT]" << endl;
 	cout << "    [--maxnfes INT]" << endl;
 	cout << "    [--np INT]" << endl;
 	cout << "    [--finit DOUBLE]" << endl;
 	cout << "    [--fmin DOUBLE]" << endl; //minimum value for f
 	cout << "    [--fmax DOUBLE]" << endl; //maximum value for f
+	cout << "    [--crinit DOUBLE]" << endl;
+	cout << "    [--crmin DOUBLE]" << endl;
+	cout << "    [--crmax DOUBLE]" << endl;
 	cout << "    [--f DOUBLE] (if you set this value, please don't set --fmin, --fmax, and --finit)" << endl;
+	cout << "    [--cr DOUBLE] (if you set this value, please don't set --crmin, --crmax, and --crinit)" << endl;
 	cout << "    [--alpha DOUBLE]" << endl;
 	cout << "    [--heu STRING(filename)]" << endl;
 	cout << "    [--ls 0(N_LS)/1(B_LS)/2(L_LS)]" << endl;
@@ -203,7 +240,7 @@ void readArguments(int argc, char** argv) {
 		strcpy(out,argv[2]);
 		//init heu to 0
 		heu = 0;
-		//init default maxnfes basing on nxm
+		//init default maxnfes basing on instance size
 		defaultMaxnfes();
 		//read and set the optional arguments
 		int i = 3;
@@ -220,6 +257,9 @@ void readArguments(int argc, char** argv) {
 			} else if (strcmp(argv[i],"--finit")==0) {
 				finit = atof(argv[i+1]);
 				i += 2;
+			} else if (strcmp(argv[i],"--crinit")==0) {
+				crinit = atof(argv[i+1]);
+				i += 2;
 			} else if (strcmp(argv[i],"--alpha")==0) {
 				alpha = atof(argv[i+1]);
 				i += 2;
@@ -234,14 +274,24 @@ void readArguments(int argc, char** argv) {
 				frfactor = atof(argv[i+1]);
 				i += 2;
 			} else if (strcmp(argv[i],"--fmin")==0) {
-				fmin = atof(argv[i+1]);
+				ffmin = atof(argv[i+1]);
 				i += 2;
 			} else if (strcmp(argv[i],"--fmax")==0) {
-				fmax = atof(argv[i+1]);
+				ffmax = atof(argv[i+1]);
+				i += 2;
+			} else if (strcmp(argv[i],"--crmin")==0) {
+				crmin = atof(argv[i+1]);
+				i += 2;
+			} else if (strcmp(argv[i],"--crmax")==0) {
+				crmax = atof(argv[i+1]);
 				i += 2;
 			} else if (strcmp(argv[i],"--f")==0) {
 				//subtle way to set a fixed F parameter
-				finit = fmin = fmax = atof(argv[i+1]);
+				finit = ffmin = ffmax = atof(argv[i+1]);
+				i += 2;
+			} else if (strcmp(argv[i],"--cr")==0) {
+				//subtle way to set a fixed CR parameter
+				crinit = crmin = crmax = atof(argv[i+1]);
 				i += 2;
 			} else if (strcmp(argv[i],"--save")==0) {
 				sscanf(argv[i+1],"%u",&saveSeconds);
@@ -263,8 +313,26 @@ void readArguments(int argc, char** argv) {
 				sscanf(argv[i+1],"%u",&maxTime);
 				i += 2;
 			} else if (strcmp(argv[i],"--gen")==0) {
-				strncpy(generators,argv[i+1],3);
+				strcpy(sgenerators,argv[i+1]);
 				i += 2;
+			} else if (strcmp(argv[i],"--init")==0) {
+				strcpy(sinitialization,argv[i+1]);
+				i += 2;
+			} else if (strcmp(argv[i],"--cross")==0) {
+				strcpy(scrossover,argv[i+1]);
+				i += 2;
+			} else if (strcmp(argv[i],"--sel")==0) {
+				strcpy(sselection,argv[i+1]);
+				i += 2;
+			} else if (strcmp(argv[i],"--lsearch")==0) {
+				strcpy(slsearch,argv[i+1]);
+				i += 2;
+			} else if (strcmp(argv[i],"--restart")==0) {
+				strcpy(srestart,argv[i+1]);
+				i += 2;
+			} else {
+				cerr << "COMMAND LINE PARAMETERS WRONG!" << endl;
+				exit(EXIT_FAILURE);
 			}
 		}
 	}
@@ -277,8 +345,13 @@ void writeResults() {
 	FILE* f = fopen(out,"r");
 	if (!f) {
 		f = fopen(out,"w");
-		fprintf(f,"exe,instance,n,m,gen,maxnfes,maxtime,seed,np,finit,fmin,fmax,alpha,heu,ls,frfactor"); //input
-		fprintf(f,",fgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,improvingSteps,lsImprovingSteps,execTime,minStageLength,maxStageLength,avgStageLength,improvingStages,nls,nfesls,nImprovingls,totImprovingls,gbestls,gbest\n"); //output
+#if defined(TFT) || defined(MAKESPAN)
+		fprintf(f,"exe,instance,n,m,gen,init,cross,sel,lsearch,restart,maxnfes,maxtime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor"); //input
+#endif
+#ifdef LOP
+		fprintf(f,"exe,instance,n,gen,init,cross,sel,lsearch,restart,maxnfes,maxtime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor"); //input
+#endif
+		fprintf(f,",fgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,improvingSteps,lsImprovingSteps,execTime,minStageLength,maxStageLength,avgStageLength,improvingStages,nls,nfesls,nImprovingls,totImprovingls,gbestls,sfSuccAvg,sfSuccStd,sfSuccMin,sfSuccMax,crSuccAvg,crSuccStd,crSuccMin,crSuccMax,child1succ,child2succ,gbest\n"); //output
 	}
 	fclose(f);
 	//write this csv line in append
@@ -286,26 +359,56 @@ void writeResults() {
 	char sfinit[32];
 	char sfmin[32];
 	char sfmax[32];
+	char scrinit[32];
+	char scrmin[32];
+	char scrmax[32];
 	char salpha[32];
 	char sfrfactor[32];
 	char savgStageLength[32];
+	char ssfSuccAvg[32];
+	char ssfSuccStd[32];
+	char ssfSuccMax[32];
+	char ssfSuccMin[32];
+	char scrSuccAvg[32];
+	char scrSuccStd[32];
+	char scrSuccMax[32];
+	char scrSuccMin[32];
 	perm2str(gbest,n,sgbest);
 	double2str(finit,sfinit);
-	double2str(fmin,sfmin);
-	double2str(fmax,sfmax);
+	double2str(ffmin,sfmin);
+	double2str(ffmax,sfmax);
+	double2str(crinit,scrinit);
+	double2str(crmin,scrmin);
+	double2str(crmax,scrmax);
 	double2str(alpha,salpha);
 	double2str(frfactor,sfrfactor);
 	double2str(avgStageLength,savgStageLength);
+	double2str(sfSuccAvg,ssfSuccAvg);
+	double sfSuccStd = sqrt(sfSuccVar);
+	double2str(sfSuccStd,ssfSuccStd);
+	double2str(sfSuccMax,ssfSuccMax);
+	double2str(sfSuccMin,ssfSuccMin);
+	double2str(crSuccAvg,scrSuccAvg);
+	double crSuccStd = sqrt(crSuccVar);
+	double2str(crSuccStd,scrSuccStd);
+	double2str(crSuccMax,scrSuccMax);
+	double2str(crSuccMin,scrSuccMin);
 	f = fopen(out,"a");
 	//input print
-	fprintf(f,"%s,%s,%d,%d,%s,%d,%d,%u,%d,%s,%s,%s,%s,%d,%d,%s",
-				exe,instance,n,m,generators,maxnfes,maxTime,seed,np,sfinit,sfmin,sfmax,salpha,heu,ls,sfrfactor);
+#if defined(TFT) || defined(MAKESPAN)
+	fprintf(f,"%s,%s,%d,%d,%s,%s,%s,%s,%s,%s,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s",
+				exe,instance,n,m,sgenerators,sinitialization,scrossover,sselection,slsearch,srestart,maxnfes,maxTime,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor);
+#endif
+#ifdef LOP
+	fprintf(f,"%s,%s,%d,%s,%s,%s,%s,%s,%s,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s",
+				exe,instance,n,sgenerators,sinitialization,scrossover,sselection,slsearch,srestart,maxnfes,maxTime,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor);
+#endif
 	//output print
-	fprintf(f,",%d,%d,%d,%d,%d,%d,%d,%d,%d,%lu,%d,%d,%s,%d,%d,%d,%d,%d,%d,%s\n",
+	fprintf(f,",%d,%d,%d,%d,%d,%d,%d,%d,%d,%lu,%d,%d,%s,%d,%d,%d,%d,%d,%d,%s,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s\n",
 			fgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,
 			improvingSteps,lsImprovingSteps,execTime,
 			minStageLength,maxStageLength,savgStageLength,improvingStages,
-			nls,nfesls,nImprovingls,totImprovingls,gbestls?1:0,sgbest);
+			nls,nfesls,nImprovingls,totImprovingls,gbestls?1:0,ssfSuccAvg,ssfSuccStd,ssfSuccMin,ssfSuccMax,scrSuccAvg,scrSuccStd,scrSuccMin,scrSuccMax,child1succ,child2succ,sgbest);
 	fclose(f);
 	//done
 }
@@ -368,17 +471,37 @@ void preResume(char* filename) {
 		nowarning = fscanf(fsav,"%u",&b);
 		bytes[j] = (unsigned char)b;
 	}
-	bytes = (unsigned char*)&fmin;                        //fmin 10bis
+	bytes = (unsigned char*)&ffmin;                       //fmin 10bis
 	for (j=0; j<sizeof(double); j++) {
 		nowarning = fscanf(fsav,"%u",&b);
 		bytes[j] = (unsigned char)b;
 	}
-	bytes = (unsigned char*)&fmax;                        //fmax 10tris
+	bytes = (unsigned char*)&ffmax;                       //fmax 10tris
 	for (j=0; j<sizeof(double); j++) {
 		nowarning = fscanf(fsav,"%u",&b);
 		bytes[j] = (unsigned char)b;
 	}
-	nowarning = fscanf(fsav,"%s",generators);			  //generators 10quadris
+	nowarning = fscanf(fsav,"%s",sgenerators);			  //sgenerators 10quadris
+	nowarning = fscanf(fsav,"%s",sinitialization);		  //sinitialization 10penta
+	nowarning = fscanf(fsav,"%s",sselection);			  //sselection 10esa
+	nowarning = fscanf(fsav,"%s",scrossover);			  //scrossover 10epta
+	nowarning = fscanf(fsav,"%s",slsearch);				  //slsearch 10octa
+	nowarning = fscanf(fsav,"%s",srestart);				  //srestart 10nine
+	bytes = (unsigned char*)&crinit;                      //crinit 10ten
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+	bytes = (unsigned char*)&crmin;                       //crmin 10eleven
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+	bytes = (unsigned char*)&crmax;                       //crmax 10twelve
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
 	bytes = (unsigned char*)&alpha;                       //alpha 11
 	for (j=0; j<sizeof(double); j++) {
 		nowarning = fscanf(fsav,"%u",&b);
@@ -400,7 +523,8 @@ void preResume(char* filename) {
 
 
 void defaultMaxnfes() {
-	maxnfes = 1000; //default "stupid" value
+	maxnfes = 100000; //default "stupid" value
+#if defined(TFT) || defined(MAKESPAN)
 	//for taillard instances
 	if (n==20) {
 		if (m==5)
@@ -432,5 +556,11 @@ void defaultMaxnfes() {
 		if (m==20)
 			maxnfes = 260316750;
 	}
+#endif
+#ifdef LOP
+	//Ceberio et al. use: n^2 * (1000, 5000, 10000)
+	#define MAXNFES_MULTIPLIER 10000 //1000, 5000, 10000 (as in Ceberio et al)
+	maxnfes = n*n*MAXNFES_MULTIPLIER;
+#endif
 }
 

@@ -6,10 +6,10 @@ INCLUDES = -I"/usr/include"
 LFLAGS = -L"/usr/lib"
 LIBS = 
 
-all: deptft depms testtft testms
+all: deptft depms deplop testtft testms
 
 clean:
-	rm *.o deptft depms testtft testms *.pyc
+	rm *.o deptft depms deplop testtft testms *.pyc
 
 cleantilde:
 	rm *~
@@ -31,26 +31,42 @@ problem_tft.o: problem.cpp problem.h tft.cpp
 
 problem_ms.o: problem.cpp problem.h makespan.cpp
 	$(CPP) -DMAKESPAN $(CPPFLAGS) $(INCLUDES) -c problem.cpp $(LFLAGS) $(LIBS) -o problem_ms.o
+	
+problem_lop.o: problem.cpp problem.h lop.cpp
+	$(CPP) -DLOP $(CPPFLAGS) $(INCLUDES) -c problem.cpp $(LFLAGS) $(LIBS) -o problem_lop.o
+	
+DEPINCLUDES = depCommon.cpp depPopInit.cpp depDiffMutation.cpp depCrossover.cpp depSelection.cpp depLocalSearch.cpp depPopRestart.cpp
 
-dep_tft.o: dep.cpp dep.h diffMutation.cpp save_resume.cpp
+dep_tft.o: dep.cpp dep.h $(DEPINCLUDES) save_resume.cpp
 	$(CPP) -DTFT $(CPPFLAGS) $(INCLUDES) -c dep.cpp $(LFLAGS) $(LIBS) -o dep_tft.o
 
-dep_ms.o: dep.cpp dep.h diffMutation.cpp save_resume.cpp
+dep_ms.o: dep.cpp dep.h $(DEPINCLUDES) save_resume.cpp
 	$(CPP) -DMAKESPAN $(CPPFLAGS) $(INCLUDES) -c dep.cpp $(LFLAGS) $(LIBS) -o dep_ms.o
+	
+dep_lop.o: dep.cpp dep.h $(DEPINCLUDES) save_resume.cpp
+	$(CPP) -DLOP $(CPPFLAGS) $(INCLUDES) -c dep.cpp $(LFLAGS) $(LIBS) -o dep_lop.o
 
 DEPTFT_OBJECTS = SFMT.o random.o timer.o utils.o problem_tft.o dep_tft.o
 
 DEPMS_OBJECTS = SFMT.o random.o timer.o utils.o problem_ms.o dep_ms.o
 
-deptft: depmain.cpp save_resume.cpp $(DEPTFT_OBJECTS)
-	$(CPP) -static $(CPPFLAGS) $(INCLUDES) depmain.cpp $(DEPTFT_OBJECTS) $(LFLAGS) $(LIBS) -o deptft
+DEPLOP_OBJECTS = SFMT.o random.o timer.o utils.o problem_lop.o dep_lop.o
 
-depms: depmain.cpp save_resume.cpp $(DEPMS_OBJECTS)
-	$(CPP) -static $(CPPFLAGS) $(INCLUDES) depmain.cpp $(DEPMS_OBJECTS) $(LFLAGS) $(LIBS) -o depms
+deptft: depmain.cpp dep_tft.o $(DEPTFT_OBJECTS)
+	$(CPP) -DTFT -static $(CPPFLAGS) $(INCLUDES) depmain.cpp $(DEPTFT_OBJECTS) $(LFLAGS) $(LIBS) -lm -o deptft
+
+depms: depmain.cpp dep_ms.o $(DEPMS_OBJECTS)
+	$(CPP) -DMAKESPAN -static $(CPPFLAGS) $(INCLUDES) depmain.cpp $(DEPMS_OBJECTS) $(LFLAGS) $(LIBS) -lm -o depms
+	
+deplop: depmain.cpp dep_lop.o $(DEPLOP_OBJECTS)
+	$(CPP) -DLOP -static $(CPPFLAGS) $(INCLUDES) depmain.cpp $(DEPLOP_OBJECTS) $(LFLAGS) $(LIBS) -lm -o deplop
 
 testtft: test.cpp problem_tft.o utils.o random.o SFMT.o
-	$(CPP) -static $(CPPFLAGS) $(INCLUDES) test.cpp problem_tft.o utils.o random.o SFMT.o $(LFLAGS) $(LIBS) -o testtft
+	$(CPP) -DTFT -static $(CPPFLAGS) $(INCLUDES) test.cpp problem_tft.o utils.o random.o SFMT.o $(LFLAGS) $(LIBS) -o testtft
 
 testms: test.cpp problem_ms.o utils.o random.o SFMT.o
-	$(CPP) -static $(CPPFLAGS) $(INCLUDES) test.cpp problem_ms.o utils.o random.o SFMT.o $(LFLAGS) $(LIBS) -o testms
+	$(CPP) -DMAKESPAN -static $(CPPFLAGS) $(INCLUDES) test.cpp problem_ms.o utils.o random.o SFMT.o $(LFLAGS) $(LIBS) -o testms
+
+testlop: test.cpp problem_lop.o utils.o random.o SFMT.o
+	$(CPP) -DLOP -static $(CPPFLAGS) $(INCLUDES) test.cpp problem_lop.o utils.o random.o SFMT.o $(LFLAGS) $(LIBS) -o testlop
 

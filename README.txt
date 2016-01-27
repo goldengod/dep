@@ -7,8 +7,9 @@ make
 to run:
 depms FSP_INSTANCE_FILE CSV_OUTPUT_FILE --heu NEH_FILE
 deptft FSP_INSTANCE_FILE CSV_OUTPUT_FILE --heu LR_FILE
+deplop LOP_INSTANCE_FILE CSV_OUTPUT_FILE
 
-FSP_INSTANCE_FILE, NEH_FILE, LR_FILE are contained in the directory "test_problems"
+FSP_INSTANCE_FILE, NEH_FILE, LR_FILE are contained in the directory "pfsp_problems"
 
 ----------------------------------------------------
 
@@ -20,7 +21,7 @@ MANIFEST CONSTANTS FOR THE COMPILATION:
 
 1) ONLINEPRINT: it enables printing-while-running code
 2) MYDEBUG: to have some debug infos
-3) GFC: enable/disable the use of the GFC data structure for fast fitness computation during the local search phase
+3) GFC: enable/disable the use of the GFC data structure for fast fitness computation during the local search phase (ONLY VALID FOR PFSP PROBLEMS)
 
 NOTE: You can enable the constants above by adding "-DONLINEPRINT" (et similia) at the row "CPPFLAGS" of the "Makefile"
 
@@ -40,7 +41,10 @@ v1.0.8 - uploaded the 07 jan 2016 - bug fix for fixed f, insertions works only w
 v1.0.9 - uploaded the 13 jan 2016 - exchanges with F>1 implemented, reindentation everywhere, updated plib, minf/maxf renamed to fmin/fmax, bugfix on makefile
 v1.1.0 - uploaded the 15 jan 2016 - different generators for diffMutation merged in a single file and using function pointers, write also maxtime on output, bugfixes on makefile (bad mutations files are no more valid for the moment)
 
+v1.5.0 - uploaded the 27 jan 2016 - revisited everything, lop implemented, function pointers, more statistics, new crossovers, new selection, directory names changed, ...
+
 ----------------------------------------------------
+
 
 
 

@@ -28,7 +28,7 @@ void diffMutationBS(int i) {
 	//(1) get 3 different indexes r0,r1,r2 different also from i
 	threeRandIndicesDiffFrom(np,i,r0,r1,r2);
 	//(2) compute scale factor using jde rule
-	sfy[i] = urand()<.1 ? fmin+(fmax-fmin)*urandi() : sfx[i];
+	sfy[i] = urand()<.1 ? ffmin+(ffmax-ffmin)*urandi() : sfx[i];
 	//(3) check and handle the easy case F=1
 	if (sfy[i]==1.) {
 		//begin case F=1
@@ -239,7 +239,7 @@ void diffMutationIS(int i) {
 	//get 3 different indexes r0,r1,r2 different also from i
 	threeRandIndicesDiffFrom(np,i,r0,r1,r2);
 	//compute scale factor and truncation bound using jde rule (need before randis for limit version)
-	sfy[i] = urand()<.1 ? fmin+(fmax-fmin)*urandi() : sfx[i];
+	sfy[i] = urand()<.1 ? ffmin+(ffmax-ffmin)*urandi() : sfx[i];
 	//x[r1]-x[r2] = x[r2]^-1*x[r1] = sort_seq.(x[r1]^-1*x[r2]) in 2 steps (I already know x[r1]^-1=ix[r1]):
 	//(1) ix1dotx2 = ix1 * x[r2]
 	ix1 = ix[r1];
@@ -544,7 +544,7 @@ void diffMutationSS(int i) { //EXCHANGES!!!
 	//(1) get 3 different indexes r0,r1,r2 different also from i
 	threeRandIndicesDiffFrom(np,i,r0,r1,r2);
 	//(2) compute scale factor and truncation bound using jde rule (need before randss for limit version)
-	sfy[i] = urand()<.1 ? fmin+(fmax-fmin)*urandi() : sfx[i];
+	sfy[i] = urand()<.1 ? ffmin+(ffmax-ffmin)*urandi() : sfx[i];
 	//(3) check and handle the easy case F=1
 	if (sfy[i]==1.) {
 		//begin case F=1
@@ -941,7 +941,7 @@ void diffMutationIS2(int i) { //INSERTIONS!!!
 	//get 3 different indexes r0,r1,r2 different also from i
 	threeRandIndicesDiffFrom(np,i,r0,r1,r2);
 	//compute scale factor and truncation bound using jde rule (need before randis2 for limit version)
-	sfy[i] = urand()<.1 ? fmin+(fmax-fmin)*urandi() : sfx[i];
+	sfy[i] = urand()<.1 ? ffmin+(ffmax-ffmin)*urandi() : sfx[i];
 	//x[r1]-x[r2] = x[r2]^-1*x[r1] = sort_seq.(x[r1]^-1*x[r2]) in 2 steps (I already know x[r1]^-1=ix[r1]):
 	//(1) ix1dotx2 = ix1 * x[r2]
 	ix1 = ix[r1];

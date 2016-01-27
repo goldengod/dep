@@ -81,7 +81,7 @@ int discardLine(FILE* f) {
 
 void printPerm(int* p, int n) {
 	for (int i=0; i<n; i++)
-		cout << p[i] << ",";
+		cout << p[i] << (i<n-1?",":"");
 	cout << endl;
 }
 

@@ -28,8 +28,11 @@ int* heup;
 //maxnfes definition (declared extern in problem.h)
 int maxnfes;
 
+//fitbound definition
+int fitbound = -1; //non lo conosco e sto minimizzando ma sono sicuro che e' positivo o nullo
+
 //best tft definition (declared extern in problem.h)
-int best;
+//int best;
 
 //inner ptimes matrix storage definition (Iliffe/display style)
 static int* ptimes;

@@ -63,15 +63,32 @@ void depSave() {
 	for (j=0; j<sizeof(double); j++)
 		fprintf(fsav,"%u ",bytes[j]);
 	fprintf(fsav,"\n");
-	bytes = (unsigned char*)&fmin;            //fmin 10bis
+	bytes = (unsigned char*)&ffmin;           //fmin 10bis
 	for (j=0; j<sizeof(double); j++)
 		fprintf(fsav,"%u ",bytes[j]);
 	fprintf(fsav,"\n");
-	bytes = (unsigned char*)&fmax;            //fmax 10tris
+	bytes = (unsigned char*)&ffmax;           //fmax 10tris
 	for (j=0; j<sizeof(double); j++)
 		fprintf(fsav,"%u ",bytes[j]);
 	fprintf(fsav,"\n");
-	fprintf(fsav,"%s\n",generators);		  //generators 10quadris
+	fprintf(fsav,"%s\n",sgenerators);		  //sgenerators 10quadris
+	fprintf(fsav,"%s\n",sinitialization);	  //sinitialization 10penta
+	fprintf(fsav,"%s\n",sselection);          //sselection 10esa
+	fprintf(fsav,"%s\n",scrossover);          //scrossover 10epta
+	fprintf(fsav,"%s\n",slsearch);			  //slsearch 10octa
+	fprintf(fsav,"%s\n",srestart);			  //srestart 10nine
+	bytes = (unsigned char*)&crinit;          //crinit 10ten
+	for (j=0; j<sizeof(double); j++)
+		fprintf(fsav,"%u ",bytes[j]);
+	fprintf(fsav,"\n");
+	bytes = (unsigned char*)&crmin;           //crmin 10eleven
+	for (j=0; j<sizeof(double); j++)
+		fprintf(fsav,"%u ",bytes[j]);
+	fprintf(fsav,"\n");
+	bytes = (unsigned char*)&crmax;           //crmax 10twelve
+	for (j=0; j<sizeof(double); j++)
+		fprintf(fsav,"%u ",bytes[j]);
+	fprintf(fsav,"\n");
 	bytes = (unsigned char*)&alpha;           //alpha 11
 	for (j=0; j<sizeof(double); j++)
 		fprintf(fsav,"%u ",bytes[j]);
@@ -134,6 +151,13 @@ void depSave() {
 			fprintf(fsav,"%u ",bytes[j]);
 	}
 	fprintf(fsav,"\n");
+	//dep.cpp (static ones): crs and no need to save crx-cry
+	for (i=0; i<2*np; i++) {                  //crs saved completely 36bis
+		bytes = (unsigned char*)&(crs[i]);
+		for (j=0; j<sizeof(double); j++)
+			fprintf(fsav,"%u ",bytes[j]);
+	}
+	fprintf(fsav,"\n");
 	//dep.cpp other static values (no need to save tmpint)
 	fprintf(fsav,"%d\n",sameFitness?1:0);     //sameFitness 37
 	fprintf(fsav,"%d\n",lastRestart);         //lastRestart 38
@@ -149,6 +173,41 @@ void depSave() {
 	//dep.cpp/h improving steps
 	fprintf(fsav,"%d\n",improvingSteps);      //improvingSteps 45
 	fprintf(fsav,"%d\n",lsImprovingSteps);    //lsImprovingSteps 46
+	//dep.cpp/h f,cr,child statistics
+	bytes = (unsigned char*)&sfSuccAvg;       //sfSuccAvg 47
+	for (j=0; j<sizeof(double); j++)
+		fprintf(fsav,"%u ",bytes[j]);
+	fprintf(fsav,"\n");
+	bytes = (unsigned char*)&sfSuccVar;       //sfSuccVar 48
+	for (j=0; j<sizeof(double); j++)
+		fprintf(fsav,"%u ",bytes[j]);
+	fprintf(fsav,"\n");
+	bytes = (unsigned char*)&sfSuccMin;       //sfSuccMin 49
+	for (j=0; j<sizeof(double); j++)
+		fprintf(fsav,"%u ",bytes[j]);
+	fprintf(fsav,"\n");
+	bytes = (unsigned char*)&sfSuccMax;       //sfSuccMax 50
+	for (j=0; j<sizeof(double); j++)
+		fprintf(fsav,"%u ",bytes[j]);
+	fprintf(fsav,"\n");
+	bytes = (unsigned char*)&crSuccAvg;       //crSuccAvg 51
+	for (j=0; j<sizeof(double); j++)
+		fprintf(fsav,"%u ",bytes[j]);
+	fprintf(fsav,"\n");
+	bytes = (unsigned char*)&crSuccVar;       //crSuccVar 52
+	for (j=0; j<sizeof(double); j++)
+		fprintf(fsav,"%u ",bytes[j]);
+	fprintf(fsav,"\n");
+	bytes = (unsigned char*)&crSuccMin;       //crSuccMin 53
+	for (j=0; j<sizeof(double); j++)
+		fprintf(fsav,"%u ",bytes[j]);
+	fprintf(fsav,"\n");
+	bytes = (unsigned char*)&crSuccMax;       //crSuccMax 54
+	for (j=0; j<sizeof(double); j++)
+		fprintf(fsav,"%u ",bytes[j]);
+	fprintf(fsav,"\n");
+	fprintf(fsav,"%d\n",child1succ);          //child1succ 55
+	fprintf(fsav,"%d\n",child2succ);          //child2succ 56
 	//close saveFile
 	fclose(fsav);
 	//call the script if it is not "none"
@@ -243,17 +302,37 @@ void depLoad(char* filename) {
 		nowarning = fscanf(fsav,"%u",&b);
 		bytes[j] = (unsigned char)b;
 	}
-	bytes = (unsigned char*)&fmin;                        //fmin 10bis
+	bytes = (unsigned char*)&ffmin;                       //fmin 10bis
 	for (j=0; j<sizeof(double); j++) {
 		nowarning = fscanf(fsav,"%u",&b);
 		bytes[j] = (unsigned char)b;
 	}
-	bytes = (unsigned char*)&fmax;                        //fmax 10tris
+	bytes = (unsigned char*)&ffmax;                       //fmax 10tris
 	for (j=0; j<sizeof(double); j++) {
 		nowarning = fscanf(fsav,"%u",&b);
 		bytes[j] = (unsigned char)b;
 	}
-	nowarning = fscanf(fsav,"%s",generators);			  //generators 10quadris
+	nowarning = fscanf(fsav,"%s",sgenerators);			  //sgenerators 10quadris
+	nowarning = fscanf(fsav,"%s",sinitialization);		  //sinitialization 10penta
+	nowarning = fscanf(fsav,"%s",sselection);             //sselection 10esa
+	nowarning = fscanf(fsav,"%s",scrossover);			  //scrossover 10epta
+	nowarning = fscanf(fsav,"%s",slsearch);			  	  //slsearch 10octa
+	nowarning = fscanf(fsav,"%s",srestart);               //srestart 10nine
+	bytes = (unsigned char*)&crinit;                      //crinit 10ten
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+	bytes = (unsigned char*)&crmin;                       //crmin 10eleven
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+	bytes = (unsigned char*)&crmax;                       //crmax 10twelve
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
 	bytes = (unsigned char*)&alpha;                       //alpha 11
 	for (j=0; j<sizeof(double); j++) {
 		nowarning = fscanf(fsav,"%u",&b);
@@ -321,6 +400,14 @@ void depLoad(char* filename) {
 			bytes[j] = (unsigned char)b;
 		}
 	}
+	//dep.cpp (static ones): crs and no need to touch crx-cry
+	for (i=0; i<2*np; i++) {                              //crs read completely 36bis
+		bytes = (unsigned char*)&(crs[i]);
+		for (j=0; j<sizeof(double); j++) {
+			nowarning = fscanf(fsav,"%u",&b);
+			bytes[j] = (unsigned char)b;
+		}
+	}
 	//dep.cpp other static values (no need to touch tmpint)
 	nowarning = fscanf(fsav,"%d",&i);                     //sameFitness 37
 	sameFitness = i==0 ? false : true;
@@ -337,6 +424,49 @@ void depLoad(char* filename) {
 	//dep.cpp/h improving steps
 	nowarning = fscanf(fsav,"%d",&improvingSteps);        //improvingSteps 45
 	nowarning = fscanf(fsav,"%d",&lsImprovingSteps);      //lsImprovingSteps 46
+	//dep.cpp/h f,cr,child statistics
+	bytes = (unsigned char*)&sfSuccAvg;                   //sfSuccAvg 47
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+	bytes = (unsigned char*)&sfSuccVar;                   //sfSuccVar 48
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+	bytes = (unsigned char*)&sfSuccMin;                   //sfSuccMin 49
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+	bytes = (unsigned char*)&sfSuccMax;                   //sfSuccMax 50
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+	bytes = (unsigned char*)&crSuccAvg;                   //crSuccAvg 51
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+	bytes = (unsigned char*)&crSuccVar;                   //crSuccVar 52
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+	bytes = (unsigned char*)&crSuccMin;                   //crSuccMin 53
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+	bytes = (unsigned char*)&crSuccMax;                   //crSuccMax 54
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+	nowarning = fscanf(fsav,"%d",&child1succ);            //child1succ 55
+	nowarning = fscanf(fsav,"%d",&child2succ);            //child2succ 56
 	//close the file
 	fclose(fsav);
 	//statement to avoid compiler complaints
