@@ -6,10 +6,10 @@ INCLUDES = -I"/usr/include"
 LFLAGS = -L"/usr/lib"
 LIBS = 
 
-all: deptft depms deplop testtft testms testlop
+all: deptft depms deplop testtft testms
 
 clean:
-	rm *.o deptft depms deplop testtft testms testlop *.pyc
+	rm *.o deptft depms deplop testtft testms *.pyc
 
 cleantilde:
 	rm *~
