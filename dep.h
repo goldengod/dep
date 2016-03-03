@@ -32,7 +32,7 @@ extern int inftype;				//parameter for inf selection (1 or 2)
 extern int* gbest;				//global best
 extern FitnessType fgbest;		//fitness of the global best
 extern int nfesFoundAt;			//evaluatins when the global best has been found
-extern unsigned int timeFoundAt;//milliseconds when the global best has been found
+extern unsigned long timeFoundAt;//milliseconds when the global best has been found
 extern int stageFoundAt;		//stage when the global best has been found
 extern int nfes;				//number of evaluations performed
 extern int ngen;				//number of generations performed

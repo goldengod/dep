@@ -112,6 +112,7 @@ void depSave() {
 	fprintf(fsav,"\n");
 #endif
 	fprintf(fsav,"%d\n",nfesFoundAt);         //nfesFoundAt 17
+	fprintf(fsav,"%lu\n",timeFoundAt);        //timeFoundAt 17b
 	fprintf(fsav,"%d\n",stageFoundAt);        //stageFoundAt 18
 	fprintf(fsav,"%d\n",nfes);                //nfes 19
 	fprintf(fsav,"%d\n",ngen);                //ngen 20
@@ -390,6 +391,7 @@ void depLoad(char* filename) {
 	}
 #endif
 	nowarning = fscanf(fsav,"%d",&nfesFoundAt);           //nfesFoundAt 17
+	nowarning = fscanf(fsav,"%lu",&timeFoundAt);          //timeFoundAt 17b
 	nowarning = fscanf(fsav,"%d",&stageFoundAt);          //stageFoundAt 18
 	nowarning = fscanf(fsav,"%d",&nfes);                  //nfes 19
 	nowarning = fscanf(fsav,"%d",&ngen);                  //ngen 20

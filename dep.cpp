@@ -41,7 +41,7 @@ int inftype = 1;			//parameter for inf selection (1 or 2, 1 is default)
 int* gbest;					//global best so far
 FitnessType fgbest;			//fitness of the global best so far
 int nfesFoundAt;			//nfes when the global best has been found
-unsigned int timeFoundAt;	//milliseconds when the global best has been found
+unsigned long timeFoundAt;	//milliseconds when the global best has been found
 int stageFoundAt;			//stage when the global best has been found
 int nfes;					//number of evaluations performed
 int ngen;					//number of generations performed
