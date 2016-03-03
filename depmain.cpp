@@ -138,6 +138,9 @@ int main(int argc, char** argv) {
 	cout << "DEP DONE:" << endl;
 	cout << " -          fgbest = " << fgbest << endl;
 	cout << " -     nfesFoundAt = " << nfesFoundAt << endl;
+	char stime[256];
+	millis2str(timeFoundAt,stime);
+	cout << " -     timeFoundAt = " << stime << endl;
 	cout << " -    stageFoundAt = " << stageFoundAt << endl;
 	cout << " -            nfes = " << nfes << endl;
 	cout << " -            ngen = " << ngen << endl;
@@ -164,7 +167,6 @@ int main(int argc, char** argv) {
 	cout << " -       crSuccMax = " << crSuccMax << endl;
 	cout << " -      child1succ = " << child1succ << endl;
 	cout << " -      child2succ = " << child2succ << endl;
-	char stime[256];
 	millis2str(execTime,stime);
 	cout << " -        execTime = " << stime << endl;
 	//check gbest validity and fitness
@@ -356,7 +358,7 @@ void writeResults() {
 #if defined(LOP) || defined(LOPCC)
 		fprintf(f,"exe,instance,n,gen,init,cross,sel,lsearch,restart,maxnfes,maxtime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
 #endif
-		fprintf(f,",fgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,improvingSteps,lsImprovingSteps,execTime,minStageLength,maxStageLength,avgStageLength,improvingStages,nls,nfesls,nImprovingls,totImprovingls,gbestls,sfSuccAvg,sfSuccStd,sfSuccMin,sfSuccMax,crSuccAvg,crSuccStd,crSuccMin,crSuccMax,child1succ,child2succ,gbest\n"); //output
+		fprintf(f,",fgbest,nfesFoundAt,timeFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,improvingSteps,lsImprovingSteps,execTime,minStageLength,maxStageLength,avgStageLength,improvingStages,nls,nfesls,nImprovingls,totImprovingls,gbestls,sfSuccAvg,sfSuccStd,sfSuccMin,sfSuccMax,crSuccAvg,crSuccStd,crSuccMin,crSuccMax,child1succ,child2succ,gbest\n"); //output
 	}
 	fclose(f);
 	//write this csv line in append
@@ -416,14 +418,14 @@ void writeResults() {
 #endif
 	//output print
 #ifdef FIT_INT
-	fprintf(f,",%d,%d,%d,%d,%d,%d,%d,%d,%d,%lu,%d,%d,%s,%d,%d,%d,%d,%d,%d,%s,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s\n",
-			fgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,
+	fprintf(f,",%d,%d,%lu,%d,%d,%d,%d,%d,%d,%d,%lu,%d,%d,%s,%d,%d,%d,%d,%d,%d,%s,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s\n",
+			fgbest,nfesFoundAt,timeFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,
 			improvingSteps,lsImprovingSteps,execTime,
 			minStageLength,maxStageLength,savgStageLength,improvingStages,
 			nls,nfesls,nImprovingls,totImprovingls,gbestls?1:0,ssfSuccAvg,ssfSuccStd,ssfSuccMin,ssfSuccMax,scrSuccAvg,scrSuccStd,scrSuccMin,scrSuccMax,child1succ,child2succ,sgbest);
 #else
-	fprintf(f,",%s,%d,%d,%d,%d,%d,%d,%d,%d,%lu,%d,%d,%s,%d,%d,%d,%d,%s,%d,%s,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s\n",
-			sfgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,
+	fprintf(f,",%s,%d,%lu,%d,%d,%d,%d,%d,%d,%d,%lu,%d,%d,%s,%d,%d,%d,%d,%s,%d,%s,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s\n",
+			sfgbest,nfesFoundAt,timeFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,
 			improvingSteps,lsImprovingSteps,execTime,
 			minStageLength,maxStageLength,savgStageLength,improvingStages,
 			nls,nfesls,nImprovingls,stotImprovingls,gbestls?1:0,ssfSuccAvg,ssfSuccStd,ssfSuccMin,ssfSuccMax,scrSuccAvg,scrSuccStd,scrSuccMin,scrSuccMax,child1succ,child2succ,sgbest);
