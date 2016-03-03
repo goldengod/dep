@@ -219,6 +219,7 @@ int footrule_distance(int *p1, int *p2) {
 
 
 //BEGIN ENTROPY SELECTION #1 (INFORMATION + FITNESS SEPARATELY)
+#ifdef LOP		//currently this selection scheme works only for LOP!!!
 inline void updatePrecCounters(int* x, int* c) {
 	int i,j;
 	for (i=0; i<n-1; i++)
@@ -236,7 +237,11 @@ inline double absInf(int* x, int* c) {
 			if (inftype==1 || inftype==3)
 				s += loglookup(c[x[i]*n+x[j]]+1);	//accumulate log(c[x[i],x[j]] + 1)  the +1 is because I have to consider also him (and to avoid log0)
 			else //inftype==2 || inftype==4
+#ifdef LOP
 				s += h[x[i]][x[j]]*loglookup(c[x[i]*n+x[j]]+1);	//MAXIMIZATION!!!
+#else
+				{ cerr << "THIS PARTICULAR TYPE OF INFORMATION BASED SELECTION (TYPE 2,4) DOES NOT WORK FOR NON LOP PROBLEMS!!!" << endl; exit(EXIT_FAILURE); }
+#endif
 	return s;
 }
 
@@ -244,7 +249,7 @@ inline double absInf(int* x, int* c) {
 void selection_informationBased() {
 	//print an error if minimization
 #ifndef LOP
-	cerr << "CURRENTLY THIS SELECTION SCHEME WORKS ONLY FOR LOP!!!"
+	cerr << "CURRENTLY THIS SELECTION SCHEME WORKS ONLY FOR LOP!!!" << endl;
 	exit(EXIT_FAILURE);
 #endif
 	//some variables
@@ -418,12 +423,15 @@ void selection_informationBased() {
 	}																																//PER STATISTICHE!!!
 	//done
 }
+#endif
 //END ENTROPY SELECTION #1 (INFORMATION + FITNESS SEPARATELY)
 
 
 
 
 //BEGIN FITNESS SEPARATION SELECTION
+#ifndef LOPCC		//currently this does not compile for LOPCC
+
 #define MAX_GAP 10000
 #define MAX_INTERVAL 10000
 
@@ -647,6 +655,8 @@ cout<<"ppos = "; printPerm(ppos,np3);//vale
 exit(1);//vale
 	//done
 }
+
+#endif
 //END FITNESS SEPARATION SELECTION
 
 

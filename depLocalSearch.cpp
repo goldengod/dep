@@ -7,10 +7,11 @@
 #endif
 #if (defined(TFT) || defined(MAKESPAN)) && defined(GFC)
 bool intStep(int* x, int& fx, bool first);
-#else
-bool intStep(int* x, int& fx);
-#endif
 void insStep(int* x, int& fx);
+#else
+bool intStep(int* x, FitnessType& fx);
+void insStep(int* x, FitnessType& fx);
+#endif
 #if (defined(TFT) || defined(MAKESPAN)) && defined(GFC)
 inline void fwdins(int* x, int i, int j);
 inline void bwdins(int* x, int i, int j);

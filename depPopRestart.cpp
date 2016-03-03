@@ -1,7 +1,7 @@
 //RESTART PROCEDURES
 
 //this line is needed to make the following function know that "localSearch" exists
-extern void (*localSearch)(int*,int&);
+extern void (*localSearch)(int*,FitnessType&);
 
 //this is to manage the restart statistics
 inline void restartStatistics() {

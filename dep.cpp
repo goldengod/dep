@@ -345,11 +345,13 @@ void depAlloc() {
 		selection = selection_alpha;
 	else if (strcmp(sselection,"crowding")==0)
 		selection = selection_crowding;
+#ifdef LOP	//currently these two are only supported by LOP!!!
 	else if (strcmp(sselection,"inf")==0) {
 		selection = selection_informationBased;
 		initLoglookup(n);	//init also the logarithms lookup table for this selection
 	}  else if (strcmp(sselection,"fitsep")==0) 
 		selection = selection_fitnessSeparation;
+#endif
 	else {
 		cerr << "ERROR: the selection \"" << sselection << "\" is not one of: \"alpha,crowding,inf\"" << endl;
 		exit(EXIT_FAILURE);

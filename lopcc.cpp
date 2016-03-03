@@ -33,10 +33,10 @@ void readInstance(char* filename) {
 		cerr << "ERROR: Unable to open " << filename << endl;
 		exit(EXIT_FAILURE);
 	}
-	n = nlines;
+	n = nlines(f);
 	fclose(f);
 	//open again the file and check for errors
-	FILE* f = fopen(filename,"r");
+	f = fopen(filename,"r");
 	if (!f) {
 		cerr << "ERROR: Unable to open " << filename << endl;
 		exit(EXIT_FAILURE);
