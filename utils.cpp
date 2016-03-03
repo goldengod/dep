@@ -1,7 +1,8 @@
 #include "utils.h"
-#include <cstdio>    //sprintf, FILE, fgetc, EOF
+#include <cstdio>    //sprintf, FILE, fgetc, EOF, sscanf
 #include <cstring>   //strlen, memset
-#include <iostream>  //cout, endl
+#include <iostream>  //cout, endl, cin, cerr
+#include <cstdlib>	 //exit, EXIT_FAILURE, atoi
 using namespace std;
 
 
@@ -113,10 +114,37 @@ bool isSortedWithValues(int* a, int l, int* v) {
 	return true;
 }
 
+
 bool isSorted(int* a, int l) {
 	for (int i=1; i<l; i++)
 		if (a[i-1]>a[i])
 			return false;
 	return true;
+}
+
+
+void str2perm(char* s, int* p, int n) {
+	for (int i=0; i<n; i++)
+		if (sscanf(s,"%d",&p[i])!=1) {
+			cerr << "ERROR IN STR2PERM!!!" << endl;
+			exit(EXIT_FAILURE);
+		}
+}
+
+
+void readPermFromKeyboard(int* x, int n) {
+	char s[10];
+	for (int i=0; i<n; i++) {
+		cin >> s;
+		x[i] = atoi(s);
+	}
+}
+
+
+int nlines(FILE* f) {
+	int nl = 0;
+	while (discardLine(f)!=EOF)
+		nl++;
+	return nl;
 }
 

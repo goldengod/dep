@@ -99,10 +99,18 @@ void depSave() {
 	for (j=0; j<sizeof(double); j++)
 		fprintf(fsav,"%u ",bytes[j]);
 	fprintf(fsav,"\n");
+	fprintf(fsav,"%d\n",inftype);			  //inftype 14bis
 	for (i=0; i<n; i++)                       //gbest 15
 		fprintf(fsav,"%d ",gbest[i]);
 	fprintf(fsav,"\n");
+#ifdef FIT_INT
 	fprintf(fsav,"%d\n",fgbest);              //fgbest 16
+#else
+	bytes = (unsigned char*)&fgbest;          //fgbest 16
+	for (j=0; j<sizeof(double); j++)
+		fprintf(fsav,"%u ",bytes[j]);
+	fprintf(fsav,"\n");
+#endif
 	fprintf(fsav,"%d\n",nfesFoundAt);         //nfesFoundAt 17
 	fprintf(fsav,"%d\n",stageFoundAt);        //stageFoundAt 18
 	fprintf(fsav,"%d\n",nfes);                //nfes 19
@@ -120,7 +128,14 @@ void depSave() {
 	fprintf(fsav,"%d\n",nfesls);              //nfesls 28
 	fprintf(fsav,"%d\n",nls);                 //nls 29
 	fprintf(fsav,"%d\n",nImprovingls);        //nImprovingls 30
+#ifdef FIT_INT
 	fprintf(fsav,"%d\n",totImprovingls);      //totImprovingls 31
+#else
+	bytes = (unsigned char*)&totImprovingls;  //totImprovingls 31
+	for (j=0; j<sizeof(double); j++)
+		fprintf(fsav,"%u ",bytes[j]);
+	fprintf(fsav,"\n");
+#endif
 	fprintf(fsav,"%d\n",gbestls?1:0);         //gbestls 32
 	//dep.cpp (static ones): ps and x-y1-y2-ix
 	for (i=0; i<4*np*n; i++)                  //ps saved completely 33
@@ -141,9 +156,18 @@ void depSave() {
 	}
 	fprintf(fsav,"\n");
 	//dep.cpp (static ones): fs and no need to save fx-fy1-fy2
+#ifdef FIT_INT
 	for (i=0; i<3*np; i++)                    //fs saved completely 35
 		fprintf(fsav,"%d ",fs[i]);
 	fprintf(fsav,"\n");
+#else
+	for (i=0; i<3*np; i++) {                  //fs saved completely 35
+		bytes = (unsigned char*)&(fs[i]);
+		for (j=0; j<sizeof(double); j++)
+			fprintf(fsav,"%u ",bytes[j]);
+	}
+	fprintf(fsav,"\n");
+#endif
 	//dep.cpp (static ones): sfs and no need to save sfx-sfy
 	for (i=0; i<2*np; i++) {                  //sfs saved completely 36
 		bytes = (unsigned char*)&(sfs[i]);
@@ -161,7 +185,14 @@ void depSave() {
 	//dep.cpp other static values (no need to save tmpint)
 	fprintf(fsav,"%d\n",sameFitness?1:0);     //sameFitness 37
 	fprintf(fsav,"%d\n",lastRestart);         //lastRestart 38
+#ifdef FIT_INT
 	fprintf(fsav,"%d\n",fgbestAtStageStart);  //fgbestAtStageStart 39
+#else
+	bytes = (unsigned char*)&fgbestAtStageStart;//fgbestAtStageStart 39
+	for (j=0; j<sizeof(double); j++)
+		fprintf(fsav,"%u ",bytes[j]);
+	fprintf(fsav,"\n");
+#endif
 	fprintf(fsav,"%d\n",permByteSize);        //permByteSize (maybe useless) 40
 	for (i=0; i<n; i++)                       //lsHistory 41
 		fprintf(fsav,"%d ",lsHistory[i]);
@@ -345,10 +376,19 @@ void depLoad(char* filename) {
 		nowarning = fscanf(fsav,"%u",&b);
 		bytes[j] = (unsigned char)b;
 	}
+	nowarning = fscanf(fsav,"%d",&inftype);               //inftype 14bis
 	//values of dep.h (extern ones but only output)
 	for (i=0; i<n; i++)                                   //gbest 15
 		nowarning = fscanf(fsav,"%d ",&(gbest[i]));
+#ifdef FIT_INT
 	nowarning = fscanf(fsav,"%d",&fgbest);                //fgbest 16
+#else
+	bytes = (unsigned char*)&fgbest;                      //fgbest 16
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+#endif
 	nowarning = fscanf(fsav,"%d",&nfesFoundAt);           //nfesFoundAt 17
 	nowarning = fscanf(fsav,"%d",&stageFoundAt);          //stageFoundAt 18
 	nowarning = fscanf(fsav,"%d",&nfes);                  //nfes 19
@@ -367,7 +407,15 @@ void depLoad(char* filename) {
 	nowarning = fscanf(fsav,"%d",&nfesls);                //nfesls 28
 	nowarning = fscanf(fsav,"%d",&nls);                   //nls 29
 	nowarning = fscanf(fsav,"%d",&nImprovingls);          //nImprovingls 30
+#ifdef FIT_INT
 	nowarning = fscanf(fsav,"%d",&totImprovingls);        //totImprovingls 31
+#else
+	bytes = (unsigned char*)&totImprovingls;              //totImprovingls 31
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+#endif
 	nowarning = fscanf(fsav,"%d",&i);                     //gbestls 32
 	gbestls = i==0 ? false : true;
 	//dep.cpp (static ones): ps and x-y1-y2-ix
@@ -390,8 +438,18 @@ void depLoad(char* filename) {
 		}
 	}
 	//dep.cpp (static ones): fs and no need to touch fx-fy1-fy2
+#ifdef FIT_INT
 	for (i=0; i<3*np; i++)                                //fs read completely 35
 		nowarning = fscanf(fsav,"%d",&(fs[i]));
+#else
+	for (i=0; i<3*np; i++) {                              //fs read completely 35
+		bytes = (unsigned char*)&(fs[i]);
+		for (j=0; j<sizeof(double); j++) {
+			nowarning = fscanf(fsav,"%u",&b);
+			bytes[j] = (unsigned char)b;
+		}
+	}
+#endif
 	//dep.cpp (static ones): sfs and no need to touch sfx-sfy
 	for (i=0; i<2*np; i++) {                              //sfs read completely 36
 		bytes = (unsigned char*)&(sfs[i]);
@@ -412,7 +470,15 @@ void depLoad(char* filename) {
 	nowarning = fscanf(fsav,"%d",&i);                     //sameFitness 37
 	sameFitness = i==0 ? false : true;
 	nowarning = fscanf(fsav,"%d",&lastRestart);           //lastRestart 38
+#ifdef FIT_INT
 	nowarning = fscanf(fsav,"%d",&fgbestAtStageStart);    //fgbestAtStageStart 39
+#else
+	bytes = (unsigned char*)&fgbestAtStageStart;          //fgbestAtStageStart 39
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+#endif
 	nowarning = fscanf(fsav,"%d",&permByteSize);          //permByteSize (maybe useless) 40
 	for (i=0; i<n; i++)                                   //lsHistory 41
 		nowarning = fscanf(fsav,"%d",&(lsHistory[i]));

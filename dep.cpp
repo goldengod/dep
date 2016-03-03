@@ -4,6 +4,7 @@
 #include "random.h"
 #include "timer.h"
 #include "utils.h"
+#include "loglookup.h"
 #include <cstring>   //memcpy, memset, memmove, strcpy, strcmp
 #include <climits>   //INT_MAX
 #include <unistd.h>  //alarm
@@ -16,7 +17,7 @@ using namespace std;
 #include "utils.h"
 #endif
 
-//definitions of variables declared in dep.h
+//definitions of input variables declared in dep.h
 int np;						//population size
 double finit;				//initial scale factor
 double crinit;				//initial crossover probability (needed for obxcr crossover)
@@ -34,8 +35,11 @@ char scrossover[10];		//crossover algorithm
 char sselection[10];		//selection algorithm
 char slsearch[10];			//local search algorithm
 char srestart[10];			//restart algorithm
+int inftype = 1;			//parameter for inf selection (1 or 2, 1 is default)
+
+//definitions of output variables declared in dep.h
 int* gbest;					//global best so far
-int fgbest;					//fitness of the global best so far
+FitnessType fgbest;			//fitness of the global best so far
 int nfesFoundAt;			//nfes when the global best has been found
 int stageFoundAt;			//stage when the global best has been found
 int nfes;					//number of evaluations performed
@@ -50,7 +54,7 @@ int improvingStages;		//number of improving stages
 int nfesls;					//evaluations spent in local searches
 int nls;					//number of local searches performed
 int nImprovingls;			//number of improving local searches
-int totImprovingls;			//total delta of improving in local searches
+FitnessType totImprovingls;	//total delta of improving in local searches
 bool gbestls;				//true if the gbest has been obtained in a local search
 bool haveToSave;			//flag for saving execution state/memory
 int improvingSteps;			//number of improvements so far
@@ -68,14 +72,14 @@ int child2succ;				//two childs statistic
 
 //inner variables
 static int** x;				//array of main individuals (Iliffe/display style)
-static int* fx;				//array of main individuals' fitnesses (Iliffe/display style)
+static FitnessType* fx;		//array of main individuals' fitnesses (Iliffe/display style)
 static int** ix;			//array of main individuals' inverses (Iliffe/display style)
 static int** y1;			//array of childrens1 (Iliffe/display style)
-static int* fy1;			//array of childrens1's fitnesses (Iliffe/display style)
+static FitnessType* fy1;	//array of childrens1's fitnesses (Iliffe/display style)
 static int** y2;			//array of childrens2 (Iliffe/display style)
-static int* fy2;			//array of childrens1's fitnesses (Iliffe/display style)
+static FitnessType* fy2;	//array of childrens1's fitnesses (Iliffe/display style)
 static int* ps;				//population storage (Iliffe/display style) x-y1-y2-ix interleaved
-static int* fs;				//fitness storage (Iliffe/display style) fx-fy1-fy2 interleaved
+static FitnessType* fs;		//fitness storage (Iliffe/display style) fx-fy1-fy2 interleaved
 static double* sfx;			//main array of scale factors (Iliffe/display style)
 static double* sfy;			//temp array of scale factors (Iliffe/display style)
 static double* sfs;			//scale factor storage (Iliffe/display style) sfx-sfy interleaved
@@ -85,7 +89,7 @@ static double* crs;			//crossover probability storage (Iliffe/display style) crx
 static int* tmpint;			//temporary memory
 static bool sameFitness;	//flag indicating if fitnesses are all equal
 static int lastRestart;		//generation when last restart happened (to count restart statistics)
-static int fgbestAtStageStart;//fitness at the begin of the current stage (to count the number of improving stages)
+static FitnessType fgbestAtStageStart;//fitness at the begin of the current stage (to count the number of improving stages)
 static int permByteSize;	//permutation size in bytes (used for memcpy)
 static int* lsHistory;		//local search history (only one perm)
 static bool lsmode;			//flag indicating if local search is running or not
@@ -96,9 +100,18 @@ static int diameter;		//diameter of the generating set
 
 //inner functions definitions
 bool popEvolve();
-inline void updateGbest(int* x, int fx);
+inline void updateGbest(int* x, FitnessType fx);
 inline bool termination();
 void depSave();
+
+//function pointers definitions
+void (*popInit)(void);
+void (*diffMutation)(int);
+void (*crossover)(int);
+void (*selection)(void);
+void (*localSearch)(int*,FitnessType&);
+bool (*popRestart)(void);
+bool (*popForcedRestart)(void);
 
 //import some code
 #include "depCommon.cpp"
@@ -108,15 +121,6 @@ void depSave();
 #include "depSelection.cpp"
 #include "depLocalSearch.cpp"
 #include "depPopRestart.cpp"
-
-//function pointers definitions
-void (*popInit)(void);
-void (*diffMutation)(int);
-void (*crossover)(int);
-void (*selection)(void);
-void (*localSearch)(int*,int&);
-bool (*popRestart)(void);
-bool (*popForcedRestart)(void);
 
 //import online printing functions
 #ifdef ONLINEPRINT
@@ -170,7 +174,7 @@ void depDefaultParameters() {
 	strcpy(srestart,"randls");
 #endif
 #ifdef LOP
-	np = 100;
+	np = 50;
 	finit = 0.5;
 	crinit = 0.5;
 	alpha = 0.0; //NOTA QUI!!!
@@ -184,12 +188,12 @@ void depDefaultParameters() {
 	strcpy(sgenerators,"asw");
 	strcpy(sinitialization,"randheu");
 	strcpy(scrossover,"obxcr");
-	strcpy(sselection,"alpha");
+	strcpy(sselection,"crowding");
 	strcpy(slsearch,"ins");
 	strcpy(srestart,"shrandls");
 #endif
 #ifdef LOPCC
-	np = 100;
+	np = 50;
 	finit = 0.5;
 	crinit = 0.5;
 	alpha = 0.0; //NOTA QUI!!!
@@ -203,7 +207,7 @@ void depDefaultParameters() {
 	strcpy(sgenerators,"asw");
 	strcpy(sinitialization,"randheu");
 	strcpy(scrossover,"obxcr");
-	strcpy(sselection,"alpha");
+	strcpy(sselection,"crowding");
 	strcpy(slsearch,"ins");
 	strcpy(srestart,"shrandls");
 #endif
@@ -270,16 +274,16 @@ void depAlloc() {
 		y2[i] = y1[i]+n;
 		ix[i] = y2[i]+n;
 	}
-	fs = new int[3*np];
+	fs = new FitnessType[3*np];
 	fx = fs;
 	fy1 = fx+np;
 	fy2 = fy1+np;
-	//main and temporary scale factor memory
-	sfs = new double[2*np];
+	//main and temporary scale factor memory (if information based selection, we need more memory)
+	sfs = new double[ strcmp(sselection,"inf")!=0 || strcmp(sselection,"fitsep")!=0 ? 2*np : 3*np ];
 	sfx = sfs;
 	sfy = sfx+np;
-	//main and temporary crossover probability memory
-	crs = new double[2*np];
+	//main and temporary crossover probability memory (if information based selection, we need more memory)
+	crs = new double[ strcmp(sselection,"inf")!=0 || strcmp(sselection,"fitsep")!=0 ? 2*np : 3*np ];
 	crx = crs;
 	cry = crx+np;
 	//set the permutation byte size
@@ -341,8 +345,13 @@ void depAlloc() {
 		selection = selection_alpha;
 	else if (strcmp(sselection,"crowding")==0)
 		selection = selection_crowding;
+	else if (strcmp(sselection,"inf")==0) {
+		selection = selection_informationBased;
+		initLoglookup(n);	//init also the logarithms lookup table for this selection
+	}  else if (strcmp(sselection,"fitsep")==0) 
+		selection = selection_fitnessSeparation;
 	else {
-		cerr << "ERROR: the selection \"" << sselection << "\" is not one of: \"alpha,crowding\"" << endl;
+		cerr << "ERROR: the selection \"" << sselection << "\" is not one of: \"alpha,crowding,inf\"" << endl;
 		exit(EXIT_FAILURE);
 	}
 	//initialize localSearch function pointer
@@ -383,6 +392,7 @@ void depFree() {
 	delete[] crs;
 	delete[] tmpint;
 	delete[] lsHistory;
+	freeLoglookup();
 }
 
 
@@ -423,7 +433,7 @@ bool popEvolve() {
 
 
 //update global best
-inline void updateGbest(int* x, int fx) {
+inline void updateGbest(int* x, FitnessType fx) {
 #ifdef MINIMIZATION
 	if (fx<fgbest) {
 #else
@@ -453,6 +463,10 @@ inline void updateGbest(int* x, int fx) {
 
 //check if max nfes has been exceeded
 inline bool termination() {
-	return nfes>=maxnfes || (maxTime>0 && getTimer()>=maxTime) || fgbest==fitbound;
+#ifdef MINIMIZATION
+	return nfes>=maxnfes || (maxTime>0 && getTimer()>=maxTime) || fgbest<=fitbound;
+#else
+	return nfes>=maxnfes || (maxTime>0 && getTimer()>=maxTime) || fgbest>=fitbound;
+#endif
 }
 

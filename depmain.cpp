@@ -103,6 +103,7 @@ int main(int argc, char** argv) {
 	cout << " -           crmin = " << crmin << endl;
 	cout << " -           crmax = " << crmax << endl;
 	cout << " -           alpha = " << alpha << endl;
+	cout << " -         inftype = " << inftype << endl;
 	cout << " -             heu = " << heu << endl;
 	cout << " -              ls = " << ls << " ";
 	switch (ls) {
@@ -195,7 +196,7 @@ void usage() {
 	cout << "    [--gen STR (asw,ins,exc,ins2) NOTE: ins2 are faster insertions with less entropy]" << endl;
 	cout << "    [--init STR (randheu)]" << endl;
 	cout << "    [--cross STR (tpii,obxcr,obx)]" << endl;
-	cout << "    [--sel STR (alpha,crowding)]" << endl;
+	cout << "    [--sel STR (alpha,crowding,inf,fitsep)]" << endl;
 	cout << "    [--lsearch STR (vns4,ins)]" << endl;
 	cout << "    [--restart STR (randls,shrandls)]" << endl;
 	cout << "    [--seed UINT]" << endl;
@@ -210,6 +211,7 @@ void usage() {
 	cout << "    [--f DOUBLE] (if you set this value, please don't set --fmin, --fmax, and --finit)" << endl;
 	cout << "    [--cr DOUBLE] (if you set this value, please don't set --crmin, --crmax, and --crinit)" << endl;
 	cout << "    [--alpha DOUBLE]" << endl;
+	cout << "    [--inftype INT (1,2,3,4)]" << endl;
 	cout << "    [--heu STRING(filename)]" << endl;
 	cout << "    [--ls 0(N_LS)/1(B_LS)/2(L_LS)]" << endl;
 	cout << "    [--frfactor DOUBLE]" << endl;
@@ -330,6 +332,9 @@ void readArguments(int argc, char** argv) {
 			} else if (strcmp(argv[i],"--restart")==0) {
 				strcpy(srestart,argv[i+1]);
 				i += 2;
+			} else if (strcmp(argv[i],"--inftype")==0) {
+				inftype = atoi(argv[i+1]);
+				i += 2;
 			} else {
 				cerr << "COMMAND LINE PARAMETERS WRONG!" << endl;
 				exit(EXIT_FAILURE);
@@ -346,10 +351,10 @@ void writeResults() {
 	if (!f) {
 		f = fopen(out,"w");
 #if defined(TFT) || defined(MAKESPAN)
-		fprintf(f,"exe,instance,n,m,gen,init,cross,sel,lsearch,restart,maxnfes,maxtime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor"); //input
+		fprintf(f,"exe,instance,n,m,gen,init,cross,sel,lsearch,restart,maxnfes,maxtime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
 #endif
 #if defined(LOP) || defined(LOPCC)
-		fprintf(f,"exe,instance,n,gen,init,cross,sel,lsearch,restart,maxnfes,maxtime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor"); //input
+		fprintf(f,"exe,instance,n,gen,init,cross,sel,lsearch,restart,maxnfes,maxtime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
 #endif
 		fprintf(f,",fgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,improvingSteps,lsImprovingSteps,execTime,minStageLength,maxStageLength,avgStageLength,improvingStages,nls,nfesls,nImprovingls,totImprovingls,gbestls,sfSuccAvg,sfSuccStd,sfSuccMin,sfSuccMax,crSuccAvg,crSuccStd,crSuccMin,crSuccMax,child1succ,child2succ,gbest\n"); //output
 	}
@@ -393,22 +398,36 @@ void writeResults() {
 	double2str(crSuccStd,scrSuccStd);
 	double2str(crSuccMax,scrSuccMax);
 	double2str(crSuccMin,scrSuccMin);
+#ifdef FIT_REAL
+	char sfgbest[64];
+	char stotImprovingls[64];
+	double2str(fgbest,sfgbest);
+	double2str(totImprovingls,stotImprovingls);
+#endif
 	f = fopen(out,"a");
 	//input print
 #if defined(TFT) || defined(MAKESPAN)
-	fprintf(f,"%s,%s,%d,%d,%s,%s,%s,%s,%s,%s,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s",
-				exe,instance,n,m,sgenerators,sinitialization,scrossover,sselection,slsearch,srestart,maxnfes,maxTime,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor);
+	fprintf(f,"%s,%s,%d,%d,%s,%s,%s,%s,%s,%s,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
+				exe,instance,n,m,sgenerators,sinitialization,scrossover,sselection,slsearch,srestart,maxnfes,maxTime,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
 #endif
 #if defined(LOP) || defined(LOPCC)
-	fprintf(f,"%s,%s,%d,%s,%s,%s,%s,%s,%s,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s",
-				exe,instance,n,sgenerators,sinitialization,scrossover,sselection,slsearch,srestart,maxnfes,maxTime,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor);
+	fprintf(f,"%s,%s,%d,%s,%s,%s,%s,%s,%s,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
+				exe,instance,n,sgenerators,sinitialization,scrossover,sselection,slsearch,srestart,maxnfes,maxTime,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
 #endif
 	//output print
+#ifdef FIT_INT
 	fprintf(f,",%d,%d,%d,%d,%d,%d,%d,%d,%d,%lu,%d,%d,%s,%d,%d,%d,%d,%d,%d,%s,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s\n",
 			fgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,
 			improvingSteps,lsImprovingSteps,execTime,
 			minStageLength,maxStageLength,savgStageLength,improvingStages,
 			nls,nfesls,nImprovingls,totImprovingls,gbestls?1:0,ssfSuccAvg,ssfSuccStd,ssfSuccMin,ssfSuccMax,scrSuccAvg,scrSuccStd,scrSuccMin,scrSuccMax,child1succ,child2succ,sgbest);
+#else
+	fprintf(f,",%s,%d,%d,%d,%d,%d,%d,%d,%d,%lu,%d,%d,%s,%d,%d,%d,%d,%s,%d,%s,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s\n",
+			sfgbest,nfesFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,
+			improvingSteps,lsImprovingSteps,execTime,
+			minStageLength,maxStageLength,savgStageLength,improvingStages,
+			nls,nfesls,nImprovingls,stotImprovingls,gbestls?1:0,ssfSuccAvg,ssfSuccStd,ssfSuccMin,ssfSuccMax,scrSuccAvg,scrSuccStd,scrSuccMin,scrSuccMax,child1succ,child2succ,sgbest);
+#endif
 	fclose(f);
 	//done
 }
@@ -514,6 +533,7 @@ void preResume(char* filename) {
 		nowarning = fscanf(fsav,"%u",&b);
 		bytes[j] = (unsigned char)b;
 	}
+	nowarning = fscanf(fsav,"%d",&inftype);               //inftype 14bis
 	//close the file
 	fclose(fsav);
 	//statement to avoid compiler complaints

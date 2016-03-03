@@ -18,7 +18,7 @@ inline void bwdins2(int* x, int i, int j);
 #endif
 
 //vns4 local search: full interchange ls (1st imp. style) + one step insert ls (best imp. style)
-void localSearch_vns4(int* x, int& fx) {
+void localSearch_vns4(int* x, FitnessType& fx) {
 	//if x is in the history, return
 	int i;
 	for (i=0; i<n; i++)
@@ -29,9 +29,9 @@ void localSearch_vns4(int* x, int& fx) {
 	//set lsmode
 	lsmode = true;
 	//save the fitness of the seed for statistics
-	int fseed = fx;
+	FitnessType fseed = fx;
 	//perform full interchange + insertion step
-	int fprev;
+	FitnessType fprev;
 	do {
 		fprev = fx;
 #if (defined(TFT) || defined(MAKESPAN)) && defined(GFC)
@@ -75,6 +75,7 @@ void localSearch_vns4(int* x, int& fx) {
 
 #if (defined(TFT) || defined(MAKESPAN)) && defined(GFC)
 //E' DI SICURO MINIMIZATION E NON MAXIMIZATION!!!
+//E' DI SICURO FIT_INT E NON FIT_REAL!!!
 //VERSIONI DI INTSTEP E INSSTEP CHE USANO GFC!!!!!!!!!!!!!!
 bool intStep(int* x, int& fx, bool first) {
 	//GFC VERSION
@@ -202,14 +203,15 @@ void insStep(int* x, int& fx) {
 #else
 
 //VERSIONI DI INTSTEP E INSSTEP CHE ***NON*** USANO GFC!!!!!!!!!!!!!!
-bool intStep(int* x, int& fx) {
+bool intStep(int* x, FitnessType& fx) {
 	//NO-GFC VERSION
 	//one step of interchange local search
 	//1st improvement style using a random permutation
 	//variables
 	static int* r = tmpint+n; //since tmpint is used to copy x in the case of B_LS
 	static int nm1 = n-1;
-	int i,j,ii,jj,t,fseed;
+	int i,j,ii,jj,t;
+	FitnessType fseed;
 	//set fitness of the seed and get a random permutation
 	fseed = fx;
 	prand(n,r);
@@ -250,13 +252,14 @@ bool intStep(int* x, int& fx) {
 }
 
 
-void insStep(int* x, int& fx) {
+void insStep(int* x, FitnessType& fx) {
 	//NO-GFC VERSION
 	//one step of insertion local search
 	//best improvement style, so no random permutation
 	//(i,j) means "move job at pos i to pos j"
 	//variables
-	int i,j,fbest,bi,bj,ft;
+	int i,j,bi,bj;
+	FitnessType fbest,ft;
 	//init fbest to fx of the seed
 	fbest = fx;
 	//scan for insertion moves in the same order of GFC version
@@ -375,7 +378,7 @@ inline void bwdins2(int* x, int i, int j) {
 
 //BEGIN INS LOCAL SEARCH (used for lop)
 //simple insert local search first improvement (no optimization)
-void localSearch_ins(int* x, int& fx) {
+void localSearch_ins(int* x, FitnessType& fx) {
 	//if x is in the history, return
 	int i;
 	for (i=0; i<n; i++)
@@ -386,10 +389,11 @@ void localSearch_ins(int* x, int& fx) {
 	//set lsmode
 	lsmode = true;
 	//save fseed
-	int fseed = fx;
+	FitnessType fseed = fx;
 	//1st improvement insertion local search (using x to choose the indexes order)
 	bool imp;
-	int j,ii,jj,fy;
+	int j,ii,jj;
+	FitnessType fy;
 	do {
 		imp = false;
 		for (i=0; i<n && !imp; i++) { //!imp for the 1st improvement style

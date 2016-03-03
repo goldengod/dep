@@ -1,6 +1,8 @@
 #ifndef DEP_H
 #define DEP_H
 
+#include "problem.h"			//to include the typedef for FitnessType
+
 //constants
 #define N_LS 0					//No local search
 #define B_LS 1					//Baldwinian local search
@@ -24,10 +26,11 @@ extern char scrossover[10];		//crossover algorithm
 extern char sselection[10];		//selection algorithm
 extern char slsearch[10];		//local search algorithm
 extern char srestart[10];		//restart algorithm
+extern int inftype;				//parameter for inf selection (1 or 2)
 
 //output
 extern int* gbest;				//global best
-extern int fgbest;				//fitness of the global best
+extern FitnessType fgbest;		//fitness of the global best
 extern int nfesFoundAt;			//evaluatins when the global best has been found
 extern int stageFoundAt;		//stage when the global best has been found
 extern int nfes;				//number of evaluations performed
@@ -42,7 +45,7 @@ extern int improvingStages;		//restart statistic
 extern int nfesls;				//local search statistic
 extern int nls;					//local search statistic
 extern int nImprovingls;		//local search statistic
-extern int totImprovingls;		//local search statistic
+extern FitnessType totImprovingls;//local search statistic
 extern bool gbestls;			//local search statistic
 extern int improvingSteps;		//total number of improvements
 extern int lsImprovingSteps;	//number of improvements due to local searches

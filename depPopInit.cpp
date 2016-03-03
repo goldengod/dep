@@ -4,10 +4,14 @@
 void popInit_randheu() {
 	//init nfes and fgbest
 	nfes = 0;
-#ifdef MINIMIZATION
-	fgbest = INT_MAX; //+inf
-#else
-	fgbest = INT_MIN; //-inf
+#if defined(MINIMIZATION) && defined(FIT_INT)
+	fgbest = INT_MAX;
+#elif defined(MINIMIZATION) && defined(FIT_REAL)
+	fgbest = PLUS_INF;
+#elif defined(MAXIMIZATION) && defined(FIT_INT)
+	fgbest = INT_MIN;
+#elif defined(MAXIMIZATION) && defined(FIT_REAL)
+	fgbest = MINUS_INF;
 #endif
 	//random population initialization apart one individual from heuristic
 	for (int i=0; i<np; i++) {
@@ -43,17 +47,21 @@ void popInit_randheu() {
 	minStageLength = maxnfes; //it's impossible to be more
 	maxStageLength = 0; //it's impossible to be less
 	avgStageLength = 0.;
-#ifdef MINIMIZATION
-	fgbestAtStageStart = INT_MAX; //for sure at stage end it will be better
-#else
-	fgbestAtStageStart = INT_MIN; //for sure at stage end it will be better
-#endif
+#if defined(MINIMIZATION) && defined(FIT_INT)
+	fgbestAtStageStart = INT_MAX;	//for sure at stage end it will be better
+#elif defined(MINIMIZATION) && defined(FIT_REAL)
+	fgbestAtStageStart = PLUS_INF;	//for sure at stage end it will be better
+#elif defined(MAXIMIZATION) && defined(FIT_INT)
+	fgbestAtStageStart = INT_MIN;	//for sure at stage end it will be better
+#elif defined(MAXIMIZATION) && defined(FIT_REAL)
+	fgbestAtStageStart = MINUS_INF;	//for sure at stage end it will be better
+#endif	
 	improvingStages = 0;
 	//init local search statistics variables
 	nfesls = 0;
 	nls = 0;
 	nImprovingls = 0;
-	totImprovingls = 0;
+	totImprovingls = 0;	//ok both for FIT_INT and FIT_REAL
 	//init lsmode to false
 	lsmode = false;
 	//init variables for forced restart

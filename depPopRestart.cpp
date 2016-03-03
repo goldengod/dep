@@ -32,10 +32,14 @@ bool popRestart_randls() {
 	//the first (it's a best) individual is keeped and the other are randomized
 	for (int i=1; i<np; i++) {
 		prand(n,x[i]);
-#ifdef MINIMIZATION
-		fx[i] = INT_MAX;  //+infinity
-#else
-		fx[i] = INT_MIN;  //-infinity
+#if defined(MINIMIZATION) && defined(FIT_INT)
+		fgbest = INT_MAX;
+#elif defined(MINIMIZATION) && defined(FIT_REAL)
+		fgbest = PLUS_INF;
+#elif defined(MAXIMIZATION) && defined(FIT_INT)
+		fgbest = INT_MIN;
+#elif defined(MAXIMIZATION) && defined(FIT_REAL)
+		fgbest = MINUS_INF;
 #endif
 		sfx[i] = finit;
 		crx[i] = crinit;
@@ -61,7 +65,7 @@ bool popRestart_randls() {
 	//local search on x[0]
 	if (ls==B_LS) { //baldwin
 		memcpy(tmpint,x[0],permByteSize);
-		int ft = fx[0];
+		FitnessType ft = fx[0];
 		localSearch(tmpint,ft);
 	} else if (ls==L_LS) {//lamarck
 		localSearch(x[0],fx[0]);
@@ -93,10 +97,14 @@ bool popForcedRestart_randls() {
 	for (i=0; i<np; i++) {
 		if (i!=ibest) {
 			prand(n,x[i]);
-#ifdef MINIMIZATION
-			fx[i] = INT_MAX; //+inf
-#else
-			fx[i] = INT_MIN;  //-inf
+#if defined(MINIMIZATION) && defined(FIT_INT)
+			fx[i] = INT_MAX;
+#elif defined(MINIMIZATION) && defined(FIT_REAL)
+			fx[i] = PLUS_INF;
+#elif defined(MAXIMIZATION) && defined(FIT_INT)
+			fx[i] = INT_MIN;
+#elif defined(MAXIMIZATION) && defined(FIT_REAL)
+			fx[i] = MINUS_INF;
 #endif
 			//update ix
 			int* inv = ix[i];
@@ -157,10 +165,14 @@ inline void restart_shrandls(int lstype) {
 	//first half takes a shake of the improved global best
 	for (i=0; i<np/2; i++) {
 		shake(x[i],x[0],irand(n*(n-1)/2));
-#ifdef MINIMIZATION
+#if defined(MINIMIZATION) && defined(FIT_INT)
 		fx[i] = INT_MAX;
-#else
+#elif defined(MINIMIZATION) && defined(FIT_REAL)
+		fx[i] = PLUS_INF;
+#elif defined(MAXIMIZATION) && defined(FIT_INT)
 		fx[i] = INT_MIN;
+#elif defined(MAXIMIZATION) && defined(FIT_REAL)
+		fx[i] = MINUS_INF;
 #endif
 		sfx[i] = finit;
 		crx[i] = crinit;
@@ -168,10 +180,14 @@ inline void restart_shrandls(int lstype) {
 	//second half is completely randomized
 	for (; i<np; i++) {
 		prand(n,x[i]);
-#ifdef MINIMIZATION
+#if defined(MINIMIZATION) && defined(FIT_INT)
 		fx[i] = INT_MAX;
-#else
+#elif defined(MINIMIZATION) && defined(FIT_REAL)
+		fx[i] = PLUS_INF;
+#elif defined(MAXIMIZATION) && defined(FIT_INT)
 		fx[i] = INT_MIN;
+#elif defined(MAXIMIZATION) && defined(FIT_REAL)
+		fx[i] = MINUS_INF;
 #endif
 		sfx[i] = finit;
 		crx[i] = crinit;

@@ -8,9 +8,11 @@ to run:
 depms FSP_INSTANCE_FILE CSV_OUTPUT_FILE --heu NEH_FILE
 deptft FSP_INSTANCE_FILE CSV_OUTPUT_FILE --heu LR_FILE
 deplop LOP_INSTANCE_FILE CSV_OUTPUT_FILE
+deplopcc LOPCC_INSTANCE_FILE CSV_OUTPUT_FILE
 
 FSP_INSTANCE_FILE, NEH_FILE, LR_FILE are contained in the directory "pfsp_problems"
 LOP_INSTANCE_FILE are contained in the directory "lop_problems"
+LOPCC_INSTANCE_FILE are contained in the directory "lopcc_problems"
 
 ----------------------------------------------------
 
@@ -43,6 +45,7 @@ v1.0.9 - uploaded the 13 jan 2016 - exchanges with F>1 implemented, reindentatio
 v1.1.0 - uploaded the 15 jan 2016 - different generators for diffMutation merged in a single file and using function pointers, write also maxtime on output, bugfixes on makefile (bad mutations files are no more valid for the moment)
 
 v1.5.0 - uploaded the 27 jan 2016 - revisited everything, lop implemented, function pointers, more statistics, new crossovers, new selection, directory names changed, ...
+v1.5.1 - uploaded the 01 mar 2016 - new selection methods introduced (some are not finalized or not working yet), FitnessType, lopcc sketched, new lopcc instances, ...
 
 ----------------------------------------------------
 

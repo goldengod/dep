@@ -26,6 +26,9 @@ timer.o: timer.cpp timer.h
 utils.o: utils.cpp utils.h
 	$(CPP) $(CPPFLAGS) $(INCLUDES) -c utils.cpp $(LFLAGS) $(LIBS)
 
+loglookup.o: loglookup.cpp loglookup.h
+	$(CPP) $(CPPFLAGS) $(INCLUDES) -c loglookup.cpp $(LFLAGS) $(LIBS)
+
 problem_tft.o: problem.cpp problem.h tft.cpp
 	$(CPP) -DTFT $(CPPFLAGS) $(INCLUDES) -c problem.cpp $(LFLAGS) $(LIBS) -o problem_tft.o
 
@@ -52,13 +55,13 @@ dep_lop.o: dep.cpp dep.h $(DEPINCLUDES) save_resume.cpp
 dep_lopcc.o: dep.cpp dep.h $(DEPINCLUDES) save_resume.cpp
 	$(CPP) -DLOPCC $(CPPFLAGS) $(INCLUDES) -c dep.cpp $(LFLAGS) $(LIBS) -o dep_lopcc.o
 
-DEPTFT_OBJECTS = SFMT.o random.o timer.o utils.o problem_tft.o dep_tft.o
+DEPTFT_OBJECTS = SFMT.o random.o timer.o utils.o loglookup.o problem_tft.o dep_tft.o
 
-DEPMS_OBJECTS = SFMT.o random.o timer.o utils.o problem_ms.o dep_ms.o
+DEPMS_OBJECTS = SFMT.o random.o timer.o utils.o loglookup.o problem_ms.o dep_ms.o
 
-DEPLOP_OBJECTS = SFMT.o random.o timer.o utils.o problem_lop.o dep_lop.o
+DEPLOP_OBJECTS = SFMT.o random.o timer.o utils.o loglookup.o problem_lop.o dep_lop.o
 
-DEPLOPCC_OBJECTS = SFMT.o random.o timer.o utils.o problem_lopcc.o dep_lopcc.o
+DEPLOPCC_OBJECTS = SFMT.o random.o timer.o utils.o loglookup.o problem_lopcc.o dep_lopcc.o
 
 deptft: depmain.cpp dep_tft.o $(DEPTFT_OBJECTS)
 	$(CPP) -DTFT -static $(CPPFLAGS) $(INCLUDES) depmain.cpp $(DEPTFT_OBJECTS) $(LFLAGS) $(LIBS) -lm -o deptft
