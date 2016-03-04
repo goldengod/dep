@@ -36,10 +36,13 @@ inline void genPrint() {
 
 
 inline void bestPrint() {
-	//print nfes,ngen,nrestarts,fgbest
+	//print nfes,ngen,nrestarts,fgbest,gbestls,timeFoundAt
+	static char stime[256];
+	millis2str(timeFoundAt,stime);
 	cerr << "nfes=" << nfes << "\tngen=" << ngen
 		<< "\tnrestarts=" << nrestarts << "\tfgbest=" << fgbest
-		<< "\tls=" << gbestls << endl;
+		<< "\tls=" << gbestls
+		<< "\ttime=" << stime << endl;
 }
 
 #endif
