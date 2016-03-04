@@ -23,7 +23,7 @@ char* double2str(double n, char* s=0);
 int discardLine(FILE* f);
 
 //print a permutation to standard output
-void printPerm(int* p, int n);
+void printPerm(int* p, int n, char d=',', bool err=false);
 
 //print a permutation in python format
 void printPermPython(int* p, int n);

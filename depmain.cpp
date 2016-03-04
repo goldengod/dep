@@ -183,8 +183,11 @@ int main(int argc, char** argv) {
 	//check gbestValid/gbestFitness and print error
 	if (!gbestValid)
 		cerr << "ERROR: GBEST IS NOT A VALID PERMUTATION!!!" << endl;
-	if (!gbestFitness)
+	if (!gbestFitness) {
 		cerr << "ERROR: GBEST FITNESS DOES NOT MATCH!!!" << endl;
+		cerr << "PERM = "; printPerm(gbest,n,' ',true);
+		cerr << "FIT = " << fgbest << endl;
+	}
 	//return success/failure basing on gbestValid/gbestFitness
 	return gbestValid && gbestFitness ? EXIT_SUCCESS : EXIT_FAILURE;
 	//done
