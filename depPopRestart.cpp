@@ -33,13 +33,13 @@ bool popRestart_randls() {
 	for (int i=1; i<np; i++) {
 		prand(n,x[i]);
 #if defined(MINIMIZATION) && defined(FIT_INT)
-		fgbest = INT_MAX;
+		fx[i] = INT_MAX;
 #elif defined(MINIMIZATION) && defined(FIT_REAL)
-		fgbest = PLUS_INF;
+		fx[i] = PLUS_INF;
 #elif defined(MAXIMIZATION) && defined(FIT_INT)
-		fgbest = INT_MIN;
+		fx[i] = INT_MIN;
 #elif defined(MAXIMIZATION) && defined(FIT_REAL)
-		fgbest = MINUS_INF;
+		fx[i] = MINUS_INF;
 #endif
 		sfx[i] = finit;
 		crx[i] = crinit;
