@@ -35,7 +35,8 @@ char scrossover[10];		//crossover algorithm
 char sselection[10];		//selection algorithm
 char slsearch[10];			//local search algorithm
 char srestart[10];			//restart algorithm
-int inftype = 1;			//parameter for inf selection (1 or 2, 1 is default)
+int inftype = 1;			//parameter for inf selection (1 or 2 or 3 or 4, 1 is default)
+int nchilds;				//number of childs for the crossover (1 or 2, 2 is default)
 
 //definitions of output variables declared in dep.h
 int* gbest;					//global best so far
@@ -154,6 +155,7 @@ void depDefaultParameters() {
 	strcpy(sselection,"alpha");
 	strcpy(slsearch,"vns4");
 	strcpy(srestart,"randls");
+	nchilds = 2;
 #endif
 #ifdef MAKESPAN
 	np = 20;
@@ -173,6 +175,7 @@ void depDefaultParameters() {
 	strcpy(sselection,"alpha");
 	strcpy(slsearch,"vns4");
 	strcpy(srestart,"randls");
+	nchilds = 2;
 #endif
 #ifdef LOP
 	np = 50;
@@ -192,25 +195,27 @@ void depDefaultParameters() {
 	strcpy(sselection,"crowding");
 	strcpy(slsearch,"ins");
 	strcpy(srestart,"shrandls");
+	nchilds = 2;
 #endif
 #ifdef LOPCC
-	np = 50;
+	np = 100;
 	finit = 0.5;
 	crinit = 0.5;
-	alpha = 0.0; //NOTA QUI!!!
-	heu = 0; //non usata per lop
-	ls = L_LS; //non c'e' differenza fra L_LS e B_ls con il restart shrandls default di lop
-	frfactor = 0.25; //DA RIVEDERE!!!
-	ffmin = 0.1; //as standard jde rule
-	ffmax = 1.0; //as standard jde rule
-	crmin = 0.0; //as standard jde rule
-	crmax = 1.0; //as standard jde rule
-	strcpy(sgenerators,"asw");
+	alpha = 0.0; 					//non usato con crowding
+	heu = 0;
+	ls = L_LS;						//non c'e' differenza fra L_LS e B_ls con il restart shrandls default di lop
+	frfactor = 1.00;				//COSI' NON FA MAI RESTART FORZATI!!!
+	ffmin = 0.1;					//as standard jde rule
+	ffmax = 1.0;					//as standard jde rule
+	crmin = 0.0;					//as standard jde rule
+	crmax = 1.0;					//as standard jde rule
+	strcpy(sgenerators,"exc");
 	strcpy(sinitialization,"randheu");
 	strcpy(scrossover,"obxcr");
 	strcpy(sselection,"crowding");
-	strcpy(slsearch,"ins");
-	strcpy(srestart,"shrandls");
+	strcpy(slsearch,"ins");			//NON SUCCEDE MAI
+	strcpy(srestart,"shrandls");	//NON SUCCEDE MAI
+	nchilds = 2;
 #endif
 }
 
@@ -337,8 +342,10 @@ void depAlloc() {
 		crossover = crossover_obxcr;
 	else if (strcmp(scrossover,"obx")==0) 		//OBX (RANDOM)
 		crossover = crossover_obx;
+	else if (strcmp(scrossover,"tpiicr")==0)	//TPIICR (TPII CON PARAMETETRO CR)
+		crossover = crossover_tpiicr;
 	else {
-		cerr << "ERROR: the crossover \"" << scrossover << "\" is not one of \"tpii,obxcr,obx\"" << endl;
+		cerr << "ERROR: the crossover \"" << scrossover << "\" is not one of \"tpii,tpiicr,obxcr,obx\"" << endl;
 		exit(EXIT_FAILURE);
 	}
 	//initialize selection function pointer
@@ -407,7 +414,7 @@ bool popEvolve() {
 	for (i=0; i<np; i++) {
 		//generate one mutant
 		diffMutation(i);
-		//generate two offspring
+		//generate two (or one) offspring
 		crossover(i);
 		//evaluate first offspring
 		fy1[i] = eval(y1[i]);
@@ -416,13 +423,16 @@ bool popEvolve() {
 		//check termination
 		if (termination())
 			return false;
-		//evaluate second offspring
-		fy2[i] = eval(y2[i]);
-		nfes++;
-		updateGbest(y2[i],fy2[i]);
-		//check termination
-		if (termination())
-			return false;
+		//if there are 2 childs are allowed (and not one)
+		if (nchilds==2) {
+			//evaluate first offspring
+			fy2[i] = eval(y2[i]);
+			nfes++;
+			updateGbest(y2[i],fy2[i]);
+			//check termination
+			if (termination())
+				return false;
+		}
 		//population loop done
 	}
 	//selection and compute sameFitness
@@ -448,7 +458,8 @@ inline void updateGbest(int* x, FitnessType fx) {
 		timeFoundAt = getTimer();
 		stageFoundAt = nrestarts;
 		gbestls = lsmode;
-		nfesWhenToForceRestart = nfes + forcedRestartPeriod;
+		if (nfesWhenToForceRestart<INT_MAX)
+			nfesWhenToForceRestart = nfes + forcedRestartPeriod;
 		improvingSteps++;
 		if (lsmode)
 			lsImprovingSteps++;
@@ -468,9 +479,9 @@ inline void updateGbest(int* x, FitnessType fx) {
 //check if max nfes has been exceeded
 inline bool termination() {
 #ifdef MINIMIZATION
-	return nfes>=maxnfes || (maxTime>0 && getTimer()>=maxTime) || fgbest<=fitbound;
+	return nfes>=maxnfes || (maxTime>0 && getTimer()>=maxTime) || (maxStagnTime>0 && getTimer()-timeFoundAt>=maxStagnTime) || fgbest<=fitbound;
 #else
-	return nfes>=maxnfes || (maxTime>0 && getTimer()>=maxTime) || fgbest>=fitbound;
+	return nfes>=maxnfes || (maxTime>0 && getTimer()>=maxTime) || (maxStagnTime>0 && getTimer()-timeFoundAt>=maxStagnTime) ||fgbest>=fitbound;
 #endif
 }
 

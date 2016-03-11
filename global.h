@@ -11,6 +11,7 @@ extern unsigned int saveSeconds;
 extern char saveFile[STRING_LENGTH];
 extern char scriptFile[STRING_LENGTH];	//for grid version
 extern unsigned int maxTime; //for stop after maxTime milliseconds
+extern unsigned int maxStagnTime; //for stop after maxStagnTime milliseconds of stagnation
 
 #endif
 

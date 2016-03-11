@@ -65,7 +65,7 @@ void popInit_randheu() {
 	//init lsmode to false
 	lsmode = false;
 	//init variables for forced restart
-	nfesWhenToForceRestart = forcedRestartPeriod = maxnfes*frfactor;
+	nfesWhenToForceRestart = forcedRestartPeriod = maxnfes==INT_MAX ? INT_MAX : maxnfes*frfactor;
 	//init improving steps
 	improvingSteps = lsImprovingSteps = 0;
 	//init f, cr, child statistics variables

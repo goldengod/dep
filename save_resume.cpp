@@ -100,6 +100,8 @@ void depSave() {
 		fprintf(fsav,"%u ",bytes[j]);
 	fprintf(fsav,"\n");
 	fprintf(fsav,"%d\n",inftype);			  //inftype 14bis
+	fprintf(fsav,"%d\n",nchilds);			  //nchilds 14tris
+	fprintf(fsav,"%u\n",maxStagnTime);		  //maxStagnTime 14quadris
 	for (i=0; i<n; i++)                       //gbest 15
 		fprintf(fsav,"%d ",gbest[i]);
 	fprintf(fsav,"\n");
@@ -378,6 +380,8 @@ void depLoad(char* filename) {
 		bytes[j] = (unsigned char)b;
 	}
 	nowarning = fscanf(fsav,"%d",&inftype);               //inftype 14bis
+	nowarning = fscanf(fsav,"%d",&nchilds);				  //nchilds 14tris
+	nowarning = fscanf(fsav,"%u",&maxStagnTime);		  //maxStagnTime 14quadris
 	//values of dep.h (extern ones but only output)
 	for (i=0; i<n; i++)                                   //gbest 15
 		nowarning = fscanf(fsav,"%d ",&(gbest[i]));

@@ -73,7 +73,8 @@ bool popRestart_randls() {
 			ix[0][x[0][k]] = k;
 	}
 	//update nfesWhenToForceRestart, thus if normal restart don't do forcedrestart
-	nfesWhenToForceRestart = nfes + forcedRestartPeriod;
+	if (nfesWhenToForceRestart<INT_MAX)
+		nfesWhenToForceRestart = nfes + forcedRestartPeriod;
 	//increase restarts counter
 	nrestarts++;
 	//restart statistics
@@ -130,7 +131,8 @@ bool popForcedRestart_randls() {
 	for (int k=0; k<n; k++)
 		ix[ibest][x[ibest][k]] = k;
 	//update nfesWhenToForceRestart
-	nfesWhenToForceRestart = nfes + forcedRestartPeriod;
+	if (nfesWhenToForceRestart<INT_MAX)
+		nfesWhenToForceRestart = nfes + forcedRestartPeriod;
 	//update statistics
 	nrestarts++;
 	nforcedrestarts++;
@@ -219,7 +221,8 @@ bool popRestart_shrandls() {
 	//do the restart
 	restart_shrandls(ls); //using the parameter for the local search type
 	//update nfesWhenToForceRestart, thus if normal restart don't do forcedrestart
-	nfesWhenToForceRestart = nfes + forcedRestartPeriod;
+	if (nfesWhenToForceRestart<INT_MAX)
+		nfesWhenToForceRestart = nfes + forcedRestartPeriod;
 	//increase restarts counter
 	nrestarts++;
 	//restart statistics
@@ -236,7 +239,8 @@ bool popForcedRestart_shrandls() {
 	//do the restart
 	restart_shrandls(L_LS); //always apply local search in case of forced restart (LARMKIAN OR BALDWINIAN DO NOT MIND)
 	//update nfesWhenToForceRestart
-	nfesWhenToForceRestart = nfes + forcedRestartPeriod;
+	if (nfesWhenToForceRestart<INT_MAX)
+		nfesWhenToForceRestart = nfes + forcedRestartPeriod;
 	//update statistics
 	nrestarts++;
 	nforcedrestarts++;

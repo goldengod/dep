@@ -67,6 +67,8 @@ void destroyInstance() {
 	delete[] c;
 	delete[] cs;
 	delete[] alphaCost;
+	if (heup)
+		delete[] heup;
 	//done
 }
 
@@ -94,8 +96,33 @@ double eval(int* x) {
 
 
 void readHeuristic(char* filename) {
-	//NOT USED FOR LOPCC!!!
-	cerr << "ERROR: WE DONT HAVE HEURISTIC IMPLEMENTED FOR LOPCC!!!" << endl;
+	//allocate heup memory
+	if (!heup)
+		heup = new int[n];
+	//open the file and check for errors
+	FILE* f = fopen(filename,"r");
+	if (!f) {
+		cerr << "ERROR: Unable to open " << filename << endl;
+		exit(EXIT_FAILURE);
+	}
+	//discard a line (contains some text by me) and check for eof error
+	if (discardLine(f)==EOF)
+		goto EOF_ERROR;
+	//read fitness and permutation build by the greedy heuristic and check for eof error
+	if (fscanf(f,"%lf",&heufit)!=1)
+		goto EOF_ERROR;
+	for (int i=0; i<n; i++)
+		if (fscanf(f,"%d",&heup[i])!=1)
+			goto EOF_ERROR;
+	//close the file
+	fclose(f);
+	//recompute fitness for solve precision problem in file print
+	heufit = eval(heup);
+	//return
+	return;
+	//eof error handling code
+	EOF_ERROR:
+	cerr << "ERROR: " << filename << " has a bad format" << endl;
 	exit(EXIT_FAILURE);
 }
 

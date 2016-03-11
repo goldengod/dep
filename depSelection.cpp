@@ -26,11 +26,11 @@ void selection_alpha() {
 void selection_alpha_1o1(int i) {
 	//variables
 	int* t;
-	//crisp pre-selection between y1[i]/y2[i] (exchange pointers without copy)
+	//crisp pre-selection between y1[i]/y2[i] (exchange pointers without copy) (CHECK FOR NCHILDS!!!)
 #ifdef MINIMIZATION
-	if (fy2[i]<fy1[i]) { //tie favors y1[i]
+	if (nchilds==2 && fy2[i]<fy1[i]) { //tie favors y1[i]
 #else
-	if (fy2[i]>fy1[i]) { //tie favors y1[i]
+	if (nchilds==2 && fy2[i]>fy1[i]) { //tie favors y1[i]
 #endif
 		fy1[i] = fy2[i];
 		t = y1[i];
@@ -69,7 +69,7 @@ void selection_alpha_1o1(int i) {
 		for (int k=0; k<n; k++)
 			inv[*t++] = k; //remember t is x[i] ... (inv[*t++] is the same of inv[t[k]])
 		//update cr,f,child statistics (for running var see http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance)
-		if (fy1[i]==fy2[i]) //NOT PRECISE BUT OK!!!
+		if (nchilds==2 && fy1[i]==fy2[i]) //NOT PRECISE BUT OK!!!
 			child2succ++;
 		else
 			child1succ++;
@@ -124,11 +124,11 @@ void selection_crowding() {
 	}
 	//scan all the childs
 	for (i=0; i<np; i++) {
-		//child1 becomes the best child
+		//child1 becomes the best child (CHECK FOR NCHILDS)
 #ifdef MINIMIZATION
-		if (fy2[i]<fy1[i]) { //tie favors y1[i]
+		if (nchilds==2 && fy2[i]<fy1[i]) { //tie favors y1[i]
 #else
-		if (fy2[i]>fy1[i]) { //tie favors y1[i]
+		if (nchilds==2 && fy2[i]>fy1[i]) { //tie favors y1[i]
 #endif
 			fy1[i] = fy2[i];
 			t = y1[i];
@@ -174,7 +174,7 @@ void selection_crowding() {
 			for (k=0; k<n; k++)
 				inv[*t++] = k; //remember t is x[i] ... (inv[*t++] is the same of inv[t[k]])
 			//update cr,f,child statistics (for running var see http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance)
-			if (fy1[j]==fy2[j]) //NOT PRECISE BUT OK!!!
+			if (nchilds==2 && fy1[j]==fy2[j]) //NOT PRECISE BUT OK!!!
 				child2succ++;
 			else
 				child1succ++;
@@ -195,13 +195,14 @@ void selection_crowding() {
 		}
 	}
 	//compute sameFitness
+	/*		CON CROWDING SI PUO' VERIFICARE SOLO NEL CASO "PRATICAMENTE IMPOSSIBILE" DI INIZIALIZZAZIONE "MONO-INDIVIDUO"
 	sameFitness = true;
 	for (i=1; i<np; i++) {
 		if (fx[i]!=fx[0]) {
 			sameFitness = false;
 			break;
 		}
-	}
+	}*/
 	//done
 }
 
@@ -251,6 +252,12 @@ void selection_informationBased() {
 #ifndef LOP
 	cerr << "CURRENTLY THIS SELECTION SCHEME WORKS ONLY FOR LOP!!!" << endl;
 	exit(EXIT_FAILURE);
+#endif
+#ifdef MYDEBUG
+	if (nchilds==1) {
+		cerr << "INFORMATION BASED SELECTION CURRENTLY WORKS ONLY WITH NCHILDS==2" << endl;
+		exit(EXIT_FAILURE);
+	}
 #endif
 	//some variables
 	static int totPrec = n*(n-1)/2;			//total number of precedences in a permutation (n choose 2)

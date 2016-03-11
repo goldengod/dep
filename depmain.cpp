@@ -22,6 +22,7 @@ unsigned int saveSeconds = 0;
 char saveFile[STRING_LENGTH];
 char scriptFile[STRING_LENGTH];	//for grid version
 unsigned int maxTime = 0;
+unsigned int maxStagnTime = 0;
 
 //inner variables
 static bool resume;
@@ -94,6 +95,7 @@ int main(int argc, char** argv) {
 	cout << " -             out = " << out << endl;
 	cout << " -         maxnfes = " << maxnfes << endl;
 	cout << " -         maxTime = " << maxTime << endl;
+	cout << " -    maxStagnTime = " << maxStagnTime << endl;
 	cout << " -            seed = " << seed << endl;
 	cout << " -              np = " << np << endl;
 	cout << " -           finit = " << finit << endl;
@@ -102,6 +104,7 @@ int main(int argc, char** argv) {
 	cout << " -          crinit = " << crinit << endl;
 	cout << " -           crmin = " << crmin << endl;
 	cout << " -           crmax = " << crmax << endl;
+	cout << " -         nchilds = " << nchilds << endl;
 	cout << " -           alpha = " << alpha << endl;
 	cout << " -         inftype = " << inftype << endl;
 	cout << " -             heu = " << heu << endl;
@@ -200,7 +203,8 @@ void usage() {
 	cout << "(1) dep INSTANCE_FILE OUTPUT_FILE" << endl;
 	cout << "    [--gen STR (asw,ins,exc,ins2) NOTE: ins2 are faster insertions with less entropy]" << endl;
 	cout << "    [--init STR (randheu)]" << endl;
-	cout << "    [--cross STR (tpii,obxcr,obx)]" << endl;
+	cout << "    [--cross STR (tpii,tpiicr,obxcr,obx)]" << endl;
+	cout << "    [--nchilds INT (1,2)]" << endl;
 	cout << "    [--sel STR (alpha,crowding,inf,fitsep)]" << endl;
 	cout << "    [--lsearch STR (vns4,ins)]" << endl;
 	cout << "    [--restart STR (randls,shrandls)]" << endl;
@@ -222,6 +226,7 @@ void usage() {
 	cout << "    [--frfactor DOUBLE]" << endl;
 	cout << "    [--save UINT(seconds) and optionally STRING(filename) and optionally STRING(scriptfile)]" << endl;
 	cout << "    [--maxtime UINT(milliseconds)]" << endl;
+	cout << "    [--maxstagntime UINT(milliseconds)]" << endl;
 	cout << "(2) dep resume SAVING_FILE" << endl;
 	cout << "-------------" << endl;
 }
@@ -319,6 +324,9 @@ void readArguments(int argc, char** argv) {
 			} else if (strcmp(argv[i],"--maxtime")==0) {
 				sscanf(argv[i+1],"%u",&maxTime);
 				i += 2;
+			} else if (strcmp(argv[i],"--maxstagntime")==0) {
+				sscanf(argv[i+1],"%u",&maxStagnTime);
+				i += 2;
 			} else if (strcmp(argv[i],"--gen")==0) {
 				strcpy(sgenerators,argv[i+1]);
 				i += 2;
@@ -340,6 +348,9 @@ void readArguments(int argc, char** argv) {
 			} else if (strcmp(argv[i],"--inftype")==0) {
 				inftype = atoi(argv[i+1]);
 				i += 2;
+			} else if (strcmp(argv[i],"--nchilds")==0) {
+				nchilds = atoi(argv[i+1]);
+				i += 2;
 			} else {
 				cerr << "COMMAND LINE PARAMETERS WRONG!" << endl;
 				exit(EXIT_FAILURE);
@@ -356,10 +367,10 @@ void writeResults() {
 	if (!f) {
 		f = fopen(out,"w");
 #if defined(TFT) || defined(MAKESPAN)
-		fprintf(f,"exe,instance,n,m,gen,init,cross,sel,lsearch,restart,maxnfes,maxtime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
+		fprintf(f,"exe,instance,n,m,gen,init,cross,nchilds,sel,lsearch,restart,maxnfes,maxtime,maxstagntime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
 #endif
 #if defined(LOP) || defined(LOPCC)
-		fprintf(f,"exe,instance,n,gen,init,cross,sel,lsearch,restart,maxnfes,maxtime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
+		fprintf(f,"exe,instance,n,gen,init,cross,nchilds,sel,lsearch,restart,maxnfes,maxtime,maxstagntime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
 #endif
 		fprintf(f,",fgbest,nfesFoundAt,timeFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,improvingSteps,lsImprovingSteps,execTime,minStageLength,maxStageLength,avgStageLength,improvingStages,nls,nfesls,nImprovingls,totImprovingls,gbestls,sfSuccAvg,sfSuccStd,sfSuccMin,sfSuccMax,crSuccAvg,crSuccStd,crSuccMin,crSuccMax,child1succ,child2succ,gbest\n"); //output
 	}
@@ -412,12 +423,12 @@ void writeResults() {
 	f = fopen(out,"a");
 	//input print
 #if defined(TFT) || defined(MAKESPAN)
-	fprintf(f,"%s,%s,%d,%d,%s,%s,%s,%s,%s,%s,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
-				exe,instance,n,m,sgenerators,sinitialization,scrossover,sselection,slsearch,srestart,maxnfes,maxTime,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
+	fprintf(f,"%s,%s,%d,%d,%s,%s,%s,%d,%s,%s,%s,%d,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
+				exe,instance,n,m,sgenerators,sinitialization,scrossover,nchilds,sselection,slsearch,srestart,maxnfes,maxTime,maxStagnTime,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
 #endif
 #if defined(LOP) || defined(LOPCC)
-	fprintf(f,"%s,%s,%d,%s,%s,%s,%s,%s,%s,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
-				exe,instance,n,sgenerators,sinitialization,scrossover,sselection,slsearch,srestart,maxnfes,maxTime,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
+	fprintf(f,"%s,%s,%d,%s,%s,%s,%d,%s,%s,%s,%d,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
+				exe,instance,n,sgenerators,sinitialization,scrossover,nchilds,sselection,slsearch,srestart,maxnfes,maxTime,maxStagnTime,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
 #endif
 	//output print
 #ifdef FIT_INT
@@ -539,6 +550,8 @@ void preResume(char* filename) {
 		bytes[j] = (unsigned char)b;
 	}
 	nowarning = fscanf(fsav,"%d",&inftype);               //inftype 14bis
+	nowarning = fscanf(fsav,"%d",&nchilds);				  //nchilds 14tris
+	nowarning = fscanf(fsav,"%u",&maxStagnTime);		  //maxStagnTime 14quadris
 	//close the file
 	fclose(fsav);
 	//statement to avoid compiler complaints
@@ -582,10 +595,14 @@ void defaultMaxnfes() {
 			maxnfes = 260316750;
 	}
 #endif
-#if defined(LOP) || defined(LOPCC)
+#if defined(LOP)
 	//Ceberio et al. use: n^2 * (1000, 5000, 10000)
 	#define MAXNFES_MULTIPLIER 10000 //1000, 5000, 10000 (as in Ceberio et al)
 	maxnfes = n*n*MAXNFES_MULTIPLIER;
+#endif
+#if defined(LOPCC)
+	//do not use maxnfes for lopcc
+	maxnfes = INT_MAX;
 #endif
 }
 
