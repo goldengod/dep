@@ -478,10 +478,11 @@ inline void updateGbest(int* x, FitnessType fx) {
 
 //check if max nfes has been exceeded
 inline bool termination() {
+	unsigned int now;
 #ifdef MINIMIZATION
-	return nfes>=maxnfes || (maxTime>0 && getTimer()>=maxTime) || (maxStagnTime>0 && getTimer()-timeFoundAt>=maxStagnTime) || fgbest<=fitbound;
+	return nfes>=maxnfes || (maxTime>0 && (now = (unsigned int)getTimer())>=maxTime) || (maxStagnTime>0 && now-timeFoundAt>=maxStagnTime) || fgbest<=fitbound;
 #else
-	return nfes>=maxnfes || (maxTime>0 && getTimer()>=maxTime) || (maxStagnTime>0 && getTimer()-timeFoundAt>=maxStagnTime) ||fgbest>=fitbound;
+	return nfes>=maxnfes || (maxTime>0 && (now = (unsigned int)getTimer())>=maxTime) || (maxStagnTime>0 && now-timeFoundAt>=maxStagnTime) ||fgbest>=fitbound;
 #endif
 }
 

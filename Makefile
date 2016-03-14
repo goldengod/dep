@@ -6,10 +6,10 @@ INCLUDES = -I"/usr/include"
 LFLAGS = -L"/usr/lib"
 LIBS = 
 
-all: deptft depms deplop deplopcc testtft testms testlop testlopcc
+all: deptft depms deplop deplopcc testtft testms testlop testlopcc lstft lsms lslop lslopcc
 
 clean:
-	rm *.o deptft depms deplop deplopcc testtft testms testlop testlopcc *.pyc
+	rm *.o deptft depms deplop deplopcc testtft testms testlop testlopcc lstft lsms lslop lslopcc *.pyc
 
 cleantilde:
 	rm *~
@@ -86,4 +86,16 @@ testlop: test.cpp problem_lop.o utils.o random.o SFMT.o
 
 testlopcc: test.cpp problem_lopcc.o utils.o random.o SFMT.o
 	$(CPP) -DLOPCC -static $(CPPFLAGS) $(INCLUDES) test.cpp problem_lopcc.o utils.o random.o SFMT.o $(LFLAGS) $(LIBS) -o testlopcc
+
+lstft: lsmain.cpp depLocalSearch.cpp problem_tft.o utils.o random.o SFMT.o timer.o
+	$(CPP) -DTFT -static $(CPPFLAGS) $(INCLUDES) problem_tft.o utils.o random.o SFMT.o timer.o lsmain.cpp $(LFLAGS) $(LIBS) -lm -o lstft
+
+lsms: lsmain.cpp depLocalSearch.cpp problem_ms.o utils.o random.o SFMT.o timer.o
+	$(CPP) -DMAKESPAN -static $(CPPFLAGS) $(INCLUDES) problem_ms.o utils.o random.o SFMT.o timer.o lsmain.cpp $(LFLAGS) $(LIBS) -lm -o lsms
+
+lslop: lsmain.cpp depLocalSearch.cpp problem_lop.o utils.o random.o SFMT.o timer.o
+	$(CPP) -DLOP -static $(CPPFLAGS) $(INCLUDES) problem_lop.o utils.o random.o SFMT.o timer.o lsmain.cpp $(LFLAGS) $(LIBS) -lm -o lslop
+
+lslopcc: lsmain.cpp depLocalSearch.cpp problem_lopcc.o utils.o random.o SFMT.o timer.o
+	$(CPP) -DLOPCC -static $(CPPFLAGS) $(INCLUDES) problem_lopcc.o utils.o random.o SFMT.o timer.o lsmain.cpp $(LFLAGS) $(LIBS) -lm -o lslopcc
 

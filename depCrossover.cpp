@@ -88,11 +88,12 @@ void crossover_tpiicr(int i) {
 	//variables
 	static int* tch = tmpint;     //temporary child for offspring 2
 	static int* imut = tmpint+n;  //mutant inverse for offspring 2
-	int c1,c2,t,*p,length,j;
+	int c1,c2,t,*p,length;
 	double cr;
 	//compute crossover probability using jde rule (THERE WAS A BUG: NO NEED TO HALVE CR IN ANY CASE!!!)
 	cr = cry[i] = urand()<.1 ? crmin+urandi()*(crmax-crmin) : crx[i];
 	//two cut points c1<=c2 (also equal cutpoints) basing on crossover probability
+	/* COSI' ERA "ESPONENZIALE"!!!
 	length = 0;				//(1) init the length of the common part [c1,c1+length]
 	for (j=1; j<n; j++) {	//(2) no more than n-1
 		if (urand()<cr)		//(3a) increase length if the guess is less than cr
@@ -101,7 +102,11 @@ void crossover_tpiicr(int i) {
 			break;			//(3b) at the first guess greater or equal to cr exit from the for
 	}
 	c1 = irand(n-length);	//(4) c1 is in [0,n-1-length]
-	c2 = c1+length;			//(5) c2 is c1 + length 
+	c2 = c1+length;			//(5) c2 is c1 + length
+	*/
+	length = n * cr;
+	c1 = irand(n-length);
+	c2 = c1 + length;
 	//(1) x[i] is father, y1[i] is mother, y2[i] becomes son
 	if (nchilds==2) {	//build y2 only if 2 childs are allowed
 		tpii(y2[i],x[i],y1[i],ix[i],c1,c2);
