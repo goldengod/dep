@@ -48,6 +48,7 @@ v1.5.0 - uploaded the 27 jan 2016 - revisited everything, lop implemented, funct
 v1.5.1 - uploaded the 01 mar 2016 - new selection methods introduced (some are not finalized or not working yet), FitnessType, lopcc sketched, new lopcc instances, ...
 v1.5.2 - uploaded the 11 mar 2016 - bugfix on cr for obxcr, tpiicr crossover, 1 child possibility, maxStagnationTime, lopcc fully working, heuristics for lopcc, ...
 v1.5.3 - uploaded the 14 mar 2016 - local searches implemented as standalone executable, only one getTimer in termination()
+v1.5.4 - uploaded the 18 mar 2016 - targetfit on command line, optima for umts lopcc instances
 
 ----------------------------------------------------
 
