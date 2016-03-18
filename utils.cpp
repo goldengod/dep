@@ -44,13 +44,13 @@ char* millis2str(unsigned long millis, char* s) {
 	int d = h/24;
 	h %= 24;
 	if (d>0)
-		sprintf(s,"%d days %d hours %d minutes %d.%d seconds",d,h,min,sec,ms);
+		sprintf(s,"%d days %d hours %d minutes %d.%03d seconds",d,h,min,sec,ms);
 	else if (h>0)
-		sprintf(s,"%d hours %d minutes %d.%d seconds",h,min,sec,ms);
+		sprintf(s,"%d hours %d minutes %d.%03d seconds",h,min,sec,ms);
 	else if (min>0)
-		sprintf(s,"%d minutes %d.%d seconds",min,sec,ms);
+		sprintf(s,"%d minutes %d.%03d seconds",min,sec,ms);
 	else
-		sprintf(s,"%d.%d seconds",sec,ms);
+		sprintf(s,"%d.%03d seconds",sec,ms);
 	return s;
 }
 
