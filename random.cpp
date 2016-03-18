@@ -15,7 +15,7 @@ void initRand(unsigned int seed) {
 //get a random seed from /dev/random
 unsigned int randSeed() {
 	//this works only on linux (it uses /dev/random)
-	FILE* f = fopen("/dev/random","rb");
+	FILE* f = fopen("/dev/urandom","rb");
 	if (!f)
 		return 0;
 	unsigned int s;
