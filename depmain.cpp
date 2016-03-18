@@ -23,6 +23,7 @@ char saveFile[STRING_LENGTH];
 char scriptFile[STRING_LENGTH];	//for grid version
 unsigned int maxTime = 0;
 unsigned int maxStagnTime = 0;
+FitnessType targetFit;
 
 //inner variables
 static bool resume;
@@ -96,6 +97,7 @@ int main(int argc, char** argv) {
 	cout << " -         maxnfes = " << maxnfes << endl;
 	cout << " -         maxTime = " << maxTime << endl;
 	cout << " -    maxStagnTime = " << maxStagnTime << endl;
+	cout << " -       targetFit = " << targetFit << endl;
 	cout << " -            seed = " << seed << endl;
 	cout << " -              np = " << np << endl;
 	cout << " -           finit = " << finit << endl;
@@ -227,6 +229,12 @@ void usage() {
 	cout << "    [--save UINT(seconds) and optionally STRING(filename) and optionally STRING(scriptfile)]" << endl;
 	cout << "    [--maxtime UINT(milliseconds)]" << endl;
 	cout << "    [--maxstagntime UINT(milliseconds)]" << endl;
+	cout << "    [--targetfit" <<
+#ifdef FIT_INT
+									"INT]" << endl;
+#else
+									"DOUBLE]" << endl;
+#endif
 	cout << "(2) dep resume SAVING_FILE" << endl;
 	cout << "-------------" << endl;
 }
@@ -238,6 +246,16 @@ void readArguments(int argc, char** argv) {
 		usage();
 		exit(EXIT_FAILURE);
 	}
+	//init targetFit to +inf or -inf
+#if defined(MINIMIZATION) && defined(FIT_REAL)
+	targetFit = MINUS_INF;
+#elif defined(MINIMIZATION) && defined(FIT_INT)
+	targetFit = INT_MIN;
+#elif defined(MAXIMIZATION) && defined(FIT_REAL)
+	targetFit = PLUS_INF;
+#elif defined(MAXIMIZATION) && defined(FIT_INT)
+	targetFit = INT_MAX;
+#endif
 	//check if it's a normal or resume execution
 	if (strcmp(argv[1],"resume")==0) {
 		//if resume only set the flag to true and read saveFile
@@ -351,6 +369,13 @@ void readArguments(int argc, char** argv) {
 			} else if (strcmp(argv[i],"--nchilds")==0) {
 				nchilds = atoi(argv[i+1]);
 				i += 2;
+			} else if (strcmp(argv[i],"--targetfit")==0) {
+#ifdef FIT_INT
+				targetFit = atoi(argv[i+1]);
+#else
+				targetFit = atof(argv[i+1]);
+#endif
+				i += 2;
 			} else {
 				cerr << "COMMAND LINE PARAMETERS WRONG!" << endl;
 				exit(EXIT_FAILURE);
@@ -367,10 +392,10 @@ void writeResults() {
 	if (!f) {
 		f = fopen(out,"w");
 #if defined(TFT) || defined(MAKESPAN)
-		fprintf(f,"exe,instance,n,m,gen,init,cross,nchilds,sel,lsearch,restart,maxnfes,maxtime,maxstagntime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
+		fprintf(f,"exe,instance,n,m,gen,init,cross,nchilds,sel,lsearch,restart,maxnfes,maxtime,maxstagntime,targetfit,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
 #endif
 #if defined(LOP) || defined(LOPCC)
-		fprintf(f,"exe,instance,n,gen,init,cross,nchilds,sel,lsearch,restart,maxnfes,maxtime,maxstagntime,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
+		fprintf(f,"exe,instance,n,gen,init,cross,nchilds,sel,lsearch,restart,maxnfes,maxtime,maxstagntime,targetfit,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
 #endif
 		fprintf(f,",fgbest,nfesFoundAt,timeFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,improvingSteps,lsImprovingSteps,execTime,minStageLength,maxStageLength,avgStageLength,improvingStages,nls,nfesls,nImprovingls,totImprovingls,gbestls,sfSuccAvg,sfSuccStd,sfSuccMin,sfSuccMax,crSuccAvg,crSuccStd,crSuccMin,crSuccMax,child1succ,child2succ,gbest\n"); //output
 	}
@@ -423,12 +448,16 @@ void writeResults() {
 	f = fopen(out,"a");
 	//input print
 #if defined(TFT) || defined(MAKESPAN)
-	fprintf(f,"%s,%s,%d,%d,%s,%s,%s,%d,%s,%s,%s,%d,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
-				exe,instance,n,m,sgenerators,sinitialization,scrossover,nchilds,sselection,slsearch,srestart,maxnfes,maxTime,maxStagnTime,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
+	fprintf(f,"%s,%s,%d,%d,%s,%s,%s,%d,%s,%s,%s,%d,%d,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
+				exe,instance,n,m,sgenerators,sinitialization,scrossover,nchilds,sselection,slsearch,srestart,maxnfes,maxTime,maxStagnTime,targetFit,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
 #endif
-#if defined(LOP) || defined(LOPCC)
-	fprintf(f,"%s,%s,%d,%s,%s,%s,%d,%s,%s,%s,%d,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
-				exe,instance,n,sgenerators,sinitialization,scrossover,nchilds,sselection,slsearch,srestart,maxnfes,maxTime,maxStagnTime,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
+#if defined(LOP)
+	fprintf(f,"%s,%s,%d,%s,%s,%s,%d,%s,%s,%s,%d,%d,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
+				exe,instance,n,sgenerators,sinitialization,scrossover,nchilds,sselection,slsearch,srestart,maxnfes,maxTime,maxStagnTime,targetFit,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
+#endif
+#if defined(LOPCC)
+	fprintf(f,"%s,%s,%d,%s,%s,%s,%d,%s,%s,%s,%d,%d,%d,%.10lf,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
+				exe,instance,n,sgenerators,sinitialization,scrossover,nchilds,sselection,slsearch,srestart,maxnfes,maxTime,maxStagnTime,targetFit,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
 #endif
 	//output print
 #ifdef FIT_INT
@@ -552,6 +581,15 @@ void preResume(char* filename) {
 	nowarning = fscanf(fsav,"%d",&inftype);               //inftype 14bis
 	nowarning = fscanf(fsav,"%d",&nchilds);				  //nchilds 14tris
 	nowarning = fscanf(fsav,"%u",&maxStagnTime);		  //maxStagnTime 14quadris
+#ifdef FIT_INT
+	nowarning = fscanf(fsav,"%d",&targetFit);			  //targetFit 14penta
+#else
+	bytes = (unsigned char*)&targetFit;
+	for (j=0; j<sizeof(double); j++) {
+		nowarning = fscanf(fsav,"%u",&b);
+		bytes[j] = (unsigned char)b;
+	}
+#endif
 	//close the file
 	fclose(fsav);
 	//statement to avoid compiler complaints

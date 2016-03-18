@@ -479,7 +479,9 @@ inline void updateGbest(int* x, FitnessType fx) {
 //check if max nfes has been exceeded
 inline bool termination() {
 	unsigned int now;
-#ifdef MINIMIZATION
+#if defined(LOPCC)
+	return nfes>=maxnfes || (maxTime>0 && (now = (unsigned int)getTimer())>=maxTime) || (maxStagnTime>0 && now-timeFoundAt>=maxStagnTime) || fgbest<=targetFit+.0005;	//.0005 because the optima are with 3 decimal precision
+#elif defined(MINIMIZATION)
 	return nfes>=maxnfes || (maxTime>0 && (now = (unsigned int)getTimer())>=maxTime) || (maxStagnTime>0 && now-timeFoundAt>=maxStagnTime) || fgbest<=fitbound;
 #else
 	return nfes>=maxnfes || (maxTime>0 && (now = (unsigned int)getTimer())>=maxTime) || (maxStagnTime>0 && now-timeFoundAt>=maxStagnTime) ||fgbest>=fitbound;
