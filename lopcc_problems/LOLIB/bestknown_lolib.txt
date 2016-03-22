@@ -1,0 +1,55 @@
+be75eec		      5.085
+be75np		6174131.005
+be75oi		      2.788
+be75tot		 297138.268
+stabu70		     13.284		paper messicani
+stabu1		     13.284		paper spagnoli + file istanza
+stabu74		     14.029		paper messicani
+stabu2		     14.029		paper spagnoli + file istanza
+stabu75		      9.412		paper messicani
+stabu3		      9.412		paper spagnoli + file istanza
+t59b11xx	  76261.661
+t59d11xx	   4086.303
+t59f11xx	     61.618		no su paper spagnoli e no su file
+t59i11xx	   7917.489		no su paper spagnoli e no su file
+t59n11xx	   1618.897
+t65b11xx	  28230.381
+t65d11xx	   3898.568
+t65f11xx	      1.245		no su paper spagnoli e no su file
+t65i11xx	 473730.893
+t65l11xx	   2657.725
+t65n11xx	      0.319		no su paper spagnoli e no su file
+t65w11xx	     19.258
+t69r11xx	     14.036
+t70b11xx	     93.671
+t_7_0_d_1_1_x_x	     79.742		paper messicani (togli underscore)
+t70d11xn	     79.742			paper spagnoli + file istanza
+t_7_0_d_1_1_x_x_b	      4.435	paper messicani (togli underscore)
+t70d11xx	      4.435			paper spagnoli + file istanza
+t70f11xx	      1.267		no su paper spagnoli e no su file
+t70i11xx	 115233.439
+t70k11xx	      0.492
+t70l11xx	    798.919
+t70n11xx	      0.054		no su paper spagnoli e no su file
+t70u11xx	  42148.819
+t70w11xx	      0.045		no su paper spagnoli e no su file
+t70x11xx	      0.231
+t74d11xx	      4.756
+t75d11xx	      5.059
+t75e11xx	   2062.246
+t75i11xx	   4454.913
+t75k11xx	      1.323
+t75n11xx		  9.896
+t75u11xxa	      0.326		paper messicani
+t75u11xx	      0.326		paper spagnoli + file istanza
+tiw56n54	      2.645
+tiw56n58	      3.62
+tiw56n62	      3.024
+tiw56n66	      2.687
+tiw56n67	      1.877
+tiw56n72	      1.567
+tiw56r54	      2.626
+tiw56r58	      3.602
+tiw56r66	      2.189
+tiw56r67	      1.541
+tiw56r72	      1.349
