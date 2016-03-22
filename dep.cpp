@@ -480,7 +480,7 @@ inline void updateGbest(int* x, FitnessType fx) {
 inline bool termination() {
 	unsigned int now = maxTime>0 || maxStagnTime>0 ? (unsigned int)getTimer() : 0;
 #if defined(LOPCC)
-	return nfes>=maxnfes || (maxTime>0 && now>=maxTime) || (maxStagnTime>0 && now-timeFoundAt>=maxStagnTime) || fgbest<=targetFit+.0005;	//.0005 because the optima are with 3 decimal precision
+	return nfes>=maxnfes || (maxTime>0 && now>=maxTime) || (maxStagnTime>0 && now-timeFoundAt>=maxStagnTime) || fgbest<targetFit+.0005;	//.0005 (and <) because the optima are with 3 decimal precision
 #elif defined(MINIMIZATION)
 	return nfes>=maxnfes || (maxTime>0 && now>=maxTime) || (maxStagnTime>0 && now-timeFoundAt>=maxStagnTime) || fgbest<=fitbound;
 #else
