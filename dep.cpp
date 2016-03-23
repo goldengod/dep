@@ -198,15 +198,15 @@ void depDefaultParameters() {
 	nchilds = 2;
 #endif
 #ifdef LOPCC
-	np = 100;
+	np = 80;
 	finit = 0.5;
 	crinit = 0.5;
 	alpha = 0.0; 					//non usato con crowding
 	heu = 0;
-	ls = L_LS;						//non c'e' differenza fra L_LS e B_ls con il restart shrandls default di lop
+	ls = L_LS;						//non c'e' differenza fra L_LS e B_ls con il restart shrandls default di lop e non usato con crowding
 	frfactor = 1.00;				//COSI' NON FA MAI RESTART FORZATI!!!
 	ffmin = 0.1;					//as standard jde rule
-	ffmax = 1.0;					//as standard jde rule
+	ffmax = 1.2;
 	crmin = 0.0;					//as standard jde rule
 	crmax = 1.0;					//as standard jde rule
 	strcpy(sgenerators,"exc");
@@ -215,7 +215,7 @@ void depDefaultParameters() {
 	strcpy(sselection,"crowding");
 	strcpy(slsearch,"ins");			//NON SUCCEDE MAI
 	strcpy(srestart,"shrandls");	//NON SUCCEDE MAI
-	nchilds = 2;
+	nchilds = 1;
 #endif
 }
 
@@ -315,6 +315,8 @@ void depAlloc() {
 		diffMutation = diffMutationIS;
 		diameter = n-1;
 		tmpint = new int[6*n]; //one insertions sequence (2*n) + four permutations (consider also the crossover)
+		if (ffmax>1.0)		//to address default configuration
+			ffmax = 1.0;
 		if (finit>1.0 || ffmin>1.0 || ffmax>1.0) { //check f params for insertions!
 			cerr << "FINIT, MINF, MAXF HAS TO BE <= 1.0 FOR INSERTIONS!!!" << endl;
 			exit(EXIT_FAILURE);
@@ -327,6 +329,8 @@ void depAlloc() {
 		diffMutation = diffMutationIS2;		//INSERTIONS 2 - INSERTION SORT FASTER BUT WITH LESS ENTROPY
 		diameter = n-1;
 		tmpint = new int[5*n]; //one insertions sequence (2*n) + three permutations (consider also the crossover)
+		if (ffmax>1.0)		//to address default configuration
+			ffmax = 1.0;
 		if (finit>1.0 || ffmin>1.0 || ffmax>1.0) { //check f params for insertions!
 			cerr << "FINIT, MINF, MAXF HAS TO BE <= 1.0 FOR INSERTIONS!!!" << endl;
 			exit(EXIT_FAILURE);
