@@ -110,6 +110,7 @@ void depSave() {
 		fprintf(fsav,"%u ",bytes[j]);
 	fprintf(fsav,"\n");
 #endif
+	fprintf(fsav,"%d\n",maxStagnNfes);		  //maxStagnNfes 14esa
 	for (i=0; i<n; i++)                       //gbest 15
 		fprintf(fsav,"%d ",gbest[i]);
 	fprintf(fsav,"\n");
@@ -399,6 +400,7 @@ void depLoad(char* filename) {
 		bytes[j] = (unsigned char)b;
 	}
 #endif
+	nowarning = fscanf(fsav,"%d",&maxStagnNfes);		  //maxStagnNfes 14esa
 	//values of dep.h (extern ones but only output)
 	for (i=0; i<n; i++)                                   //gbest 15
 		nowarning = fscanf(fsav,"%d ",&(gbest[i]));

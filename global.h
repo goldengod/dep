@@ -15,6 +15,7 @@ extern char scriptFile[STRING_LENGTH];	//for grid version
 extern unsigned int maxTime;			//for stop after maxTime milliseconds
 extern unsigned int maxStagnTime;		//for stop after maxStagnTime milliseconds of stagnation
 extern FitnessType targetFit;			//for stop when target fitness is reached
+extern int maxStagnNfes;				//for stop after maxStagnNfes evaluations of stagnation
 
 #endif
 

@@ -484,11 +484,11 @@ inline void updateGbest(int* x, FitnessType fx) {
 inline bool termination() {
 	unsigned int now = maxTime>0 || maxStagnTime>0 ? (unsigned int)getTimer() : 0;
 #if defined(LOPCC)
-	return nfes>=maxnfes || (maxTime>0 && now>=maxTime) || (maxStagnTime>0 && now-timeFoundAt>=maxStagnTime) || fgbest<targetFit+.0005;	//.0005 (and <) because the optima are with 3 decimal precision
+	return (maxStagnNfes>0 && nfes-nfesFoundAt>=maxStagnNfes) || nfes>=maxnfes || (maxTime>0 && now>=maxTime) || (maxStagnTime>0 && now-timeFoundAt>=maxStagnTime) || fgbest<targetFit+.0005;	//.0005 (and <) because the optima are with 3 decimal precision
 #elif defined(MINIMIZATION)
-	return nfes>=maxnfes || (maxTime>0 && now>=maxTime) || (maxStagnTime>0 && now-timeFoundAt>=maxStagnTime) || fgbest<=fitbound;
+	return (maxStagnNfes>0 && nfes-nfesFoundAt>=maxStagnNfes) || nfes>=maxnfes || (maxTime>0 && now>=maxTime) || (maxStagnTime>0 && now-timeFoundAt>=maxStagnTime) || fgbest<=fitbound;
 #else
-	return nfes>=maxnfes || (maxTime>0 && now>=maxTime) || (maxStagnTime>0 && now-timeFoundAt>=maxStagnTime) || fgbest>=fitbound;
+	return (maxStagnNfes>0 && nfes-nfesFoundAt>=maxStagnNfes) || nfes>=maxnfes || (maxTime>0 && now>=maxTime) || (maxStagnTime>0 && now-timeFoundAt>=maxStagnTime) || fgbest>=fitbound;
 #endif
 }
 
