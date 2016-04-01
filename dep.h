@@ -28,6 +28,7 @@ extern char slsearch[10];		//local search algorithm
 extern char srestart[10];		//restart algorithm
 extern int inftype;				//parameter for inf selection (1 or 2 or 3 or 4)
 extern int nchilds;				//number of childs for the crossover (1 or 2)
+extern bool memetic;			//memetic flag
 
 //output
 extern int* gbest;				//global best

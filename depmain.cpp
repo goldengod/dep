@@ -113,6 +113,7 @@ int main(int argc, char** argv) {
 	cout << " -         inftype = " << inftype << endl;
 	cout << " -             heu = " << heu << endl;
 	cout << " -              ls = " << ls << " ";
+	cout << " -         memetic = " << memetic << endl;
 	switch (ls) {
 		case N_LS:
 			cout << "(N_LS)" << endl;
@@ -229,6 +230,7 @@ void usage() {
 	cout << "    [--heu STRING(filename)]" << endl;
 	cout << "    [--ls 0(N_LS)/1(B_LS)/2(L_LS)]" << endl;
 	cout << "    [--frfactor DOUBLE]" << endl;
+	cout << "    [--memetic]" << endl;
 	cout << "    [--save UINT(seconds) and optionally STRING(filename) and optionally STRING(scriptfile)]" << endl;
 	cout << "    [--maxtime UINT(milliseconds)]" << endl;
 	cout << "    [--maxstagntime UINT(milliseconds)]" << endl;
@@ -271,8 +273,9 @@ void readArguments(int argc, char** argv) {
 		strcpy(exe,argv[0]);
 		readInstance(argv[1]);
 		strcpy(out,argv[2]);
-		//init heu to 0
+		//init heu to 0 and memetic to false
 		heu = 0;
+		memetic = false;
 		//init default maxnfes basing on instance size
 		defaultMaxnfes();
 		//read and set the optional arguments
@@ -382,6 +385,9 @@ void readArguments(int argc, char** argv) {
 				targetFit = atof(argv[i+1]);
 #endif
 				i += 2;
+			} else if (strcmp(argv[i],"--memetic")==0) {
+				memetic = true;
+				i++;
 			} else {
 				cerr << "COMMAND LINE PARAMETERS WRONG!" << endl;
 				exit(EXIT_FAILURE);
@@ -398,10 +404,10 @@ void writeResults() {
 	if (!f) {
 		f = fopen(out,"w");
 #if defined(TFT) || defined(MAKESPAN)
-		fprintf(f,"exe,instance,n,m,gen,init,cross,nchilds,sel,lsearch,restart,maxnfes,maxstagnnfes,maxtime,maxstagntime,targetfit,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
+		fprintf(f,"exe,instance,n,m,gen,init,cross,nchilds,sel,lsearch,restart,memetic,maxnfes,maxstagnnfes,maxtime,maxstagntime,targetfit,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
 #endif
 #if defined(LOP) || defined(LOPCC)
-		fprintf(f,"exe,instance,n,gen,init,cross,nchilds,sel,lsearch,restart,maxnfes,maxstagnnfes,maxtime,maxstagntime,targetfit,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
+		fprintf(f,"exe,instance,n,gen,init,cross,nchilds,sel,lsearch,restart,memetic,maxnfes,maxstagnnfes,maxtime,maxstagntime,targetfit,seed,np,finit,fmin,fmax,crinit,crmin,crmax,alpha,heu,ls,frfactor,inftype"); //input
 #endif
 		fprintf(f,",fgbest,nfesFoundAt,timeFoundAt,stageFoundAt,nfes,ngen,nrestarts,nforcedrestarts,improvingSteps,lsImprovingSteps,execTime,minStageLength,maxStageLength,avgStageLength,improvingStages,nls,nfesls,nImprovingls,totImprovingls,gbestls,sfSuccAvg,sfSuccStd,sfSuccMin,sfSuccMax,crSuccAvg,crSuccStd,crSuccMin,crSuccMax,child1succ,child2succ,gbest\n"); //output
 	}
@@ -454,16 +460,16 @@ void writeResults() {
 	f = fopen(out,"a");
 	//input print
 #if defined(TFT) || defined(MAKESPAN)
-	fprintf(f,"%s,%s,%d,%d,%s,%s,%s,%d,%s,%s,%s,%d,%d,%d,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
-				exe,instance,n,m,sgenerators,sinitialization,scrossover,nchilds,sselection,slsearch,srestart,maxnfes,maxStagnNfes,maxTime,maxStagnTime,targetFit,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
+	fprintf(f,"%s,%s,%d,%d,%s,%s,%s,%d,%s,%s,%s,%d,%d,%d,%d,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
+				exe,instance,n,m,sgenerators,sinitialization,scrossover,nchilds,sselection,slsearch,srestart,memetic?1:0,maxnfes,maxStagnNfes,maxTime,maxStagnTime,targetFit,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
 #endif
 #if defined(LOP)
-	fprintf(f,"%s,%s,%d,%s,%s,%s,%d,%s,%s,%s,%d,%d,%d,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
-				exe,instance,n,sgenerators,sinitialization,scrossover,nchilds,sselection,slsearch,srestart,maxnfes,maxStagnNfes,maxTime,maxStagnTime,targetFit,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
+	fprintf(f,"%s,%s,%d,%s,%s,%s,%d,%s,%s,%s,%d,%d,%d,%d,%d,%d,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
+				exe,instance,n,sgenerators,sinitialization,scrossover,nchilds,sselection,slsearch,srestart,memetic?1:0,maxnfes,maxStagnNfes,maxTime,maxStagnTime,targetFit,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
 #endif
 #if defined(LOPCC)
-	fprintf(f,"%s,%s,%d,%s,%s,%s,%d,%s,%s,%s,%d,%d,%d,%d,%.10lf,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
-				exe,instance,n,sgenerators,sinitialization,scrossover,nchilds,sselection,slsearch,srestart,maxnfes,maxStagnNfes,maxTime,maxStagnTime,targetFit,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
+	fprintf(f,"%s,%s,%d,%s,%s,%s,%d,%s,%s,%s,%d,%d,%d,%d,%d,%.10lf,%u,%d,%s,%s,%s,%s,%s,%s,%s,%d,%d,%s,%d",
+				exe,instance,n,sgenerators,sinitialization,scrossover,nchilds,sselection,slsearch,srestart,memetic?1:0,maxnfes,maxStagnNfes,maxTime,maxStagnTime,targetFit,seed,np,sfinit,sfmin,sfmax,scrinit,scrmin,scrmax,salpha,heu,ls,sfrfactor,inftype);
 #endif
 	//output print
 #ifdef FIT_INT
@@ -597,6 +603,8 @@ void preResume(char* filename) {
 	}
 #endif
 	nowarning = fscanf(fsav,"%d",&maxStagnNfes);		  //maxStagnNfes 14esa
+	nowarning = fscanf(fsav,"%d",&b);					  //memetic 14epta
+	memetic = b==1;
 	//close the file
 	fclose(fsav);
 	//statement to avoid compiler complaints
@@ -646,9 +654,14 @@ void defaultMaxnfes() {
 	maxnfes = n*n*MAXNFES_MULTIPLIER;
 #endif
 #if defined(LOPCC)
-	//do not use maxnfes but maxStagnNfes
+	//do not use maxnfes but maxStagnNfes and maxtime
 	maxnfes = INT_MAX;
-	maxStagnNfes = n*n*200;	//derived from preliminar experiments
+	//maxStagnNfes = n*n*200;	//derived from preliminar experiments	//old!!!
+	switch (n) {
+		case 100:	maxStagnNfes = 10000000; maxTime = 3600000; break;	//10M nfes of stagnation + 1 hour total
+		case 150:	maxStagnNfes = 10000000; maxTime = 3600000; break;	//10M nfes of stagnation + 1 hour total
+		default:	break;												//no limit
+	}
 #endif
 }
 

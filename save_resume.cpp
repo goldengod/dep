@@ -111,6 +111,7 @@ void depSave() {
 	fprintf(fsav,"\n");
 #endif
 	fprintf(fsav,"%d\n",maxStagnNfes);		  //maxStagnNfes 14esa
+	fprintf(fsav,"%d\n",memetic?1:0);		  //memetic 14epta
 	for (i=0; i<n; i++)                       //gbest 15
 		fprintf(fsav,"%d ",gbest[i]);
 	fprintf(fsav,"\n");
@@ -401,6 +402,8 @@ void depLoad(char* filename) {
 	}
 #endif
 	nowarning = fscanf(fsav,"%d",&maxStagnNfes);		  //maxStagnNfes 14esa
+	nowarning = fscanf(fsav,"%d",&b);					  //memetic 14epta
+	memetic = b==1;
 	//values of dep.h (extern ones but only output)
 	for (i=0; i<n; i++)                                   //gbest 15
 		nowarning = fscanf(fsav,"%d ",&(gbest[i]));

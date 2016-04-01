@@ -37,6 +37,7 @@ char slsearch[10];			//local search algorithm
 char srestart[10];			//restart algorithm
 int inftype = 1;			//parameter for inf selection (1 or 2 or 3 or 4, 1 is default)
 int nchilds;				//number of childs for the crossover (1 or 2, 2 is default)
+bool memetic = false;		//memetic flag
 
 //definitions of output variables declared in dep.h
 int* gbest;					//global best so far
@@ -427,6 +428,9 @@ bool popEvolve() {
 		//check termination
 		if (termination())
 			return false;
+		//memetic part
+		if (memetic)
+			localSearch(y1[i],fy1[i]);
 		//if there are 2 childs are allowed (and not one)
 		if (nchilds==2) {
 			//evaluate first offspring
@@ -436,6 +440,9 @@ bool popEvolve() {
 			//check termination
 			if (termination())
 				return false;
+			//memetic part
+			if (memetic)
+				localSearch(y1[i],fy1[i]);
 		}
 		//population loop done
 	}

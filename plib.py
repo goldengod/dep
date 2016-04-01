@@ -108,6 +108,7 @@ randmergess(x)        return a sequence of EXC tuples that UNsorts x
 randDecExc(x)         return a EXC decomposition of x
 randis(x,randlis)     return a sequence of INS tuples that sorts x (UNIFORM STEP NOT IMPLEMENTED) (the randlis function as parameter is optional)
 randDecIns(x,randlis) return a INS decomposition of x (see randis)
+checkAllInsDiamRev()  return true if for all permutations x the Ulam distance between x and rev(x) equals the Ulam diameter
 	""")
 
 #test function
@@ -674,7 +675,15 @@ def randis(x,randlis=urlis):
 def decInsSeq(x,randlis=urlis):
 	return randis(inv(x),randlis)
 			
-		
+def checkAllInsDiamRev():
+	#return true if for all permutations x the Ulam distance between x and rev(x) equals the Ulam diameter
+	#return false otherwise
+	for p in itertools.permutations(e):
+		x = list(p)
+		r = rev(x)
+		if du(x,r)!=Du:
+			return False
+	return True
 		
 		
 	

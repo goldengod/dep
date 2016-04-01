@@ -79,6 +79,11 @@ void popInit_randheu() {
 	crSuccMax = 0.;
 	child1succ = 0;
 	child2succ = 0;
+	//memetic part
+	if (memetic) {
+		for (int i=0; i<np; i++)
+			localSearch(x[i],fx[i]);
+	}
 	//done
 }
 
