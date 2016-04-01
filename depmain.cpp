@@ -112,8 +112,8 @@ int main(int argc, char** argv) {
 	cout << " -           alpha = " << alpha << endl;
 	cout << " -         inftype = " << inftype << endl;
 	cout << " -             heu = " << heu << endl;
-	cout << " -              ls = " << ls << " ";
 	cout << " -         memetic = " << memetic << endl;
+	cout << " -              ls = " << ls << " ";
 	switch (ls) {
 		case N_LS:
 			cout << "(N_LS)" << endl;
