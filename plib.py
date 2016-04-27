@@ -109,6 +109,7 @@ randDecExc(x)         return a EXC decomposition of x
 randis(x,randlis)     return a sequence of INS tuples that sorts x (UNIFORM STEP NOT IMPLEMENTED) (the randlis function as parameter is optional)
 randDecIns(x,randlis) return a INS decomposition of x (see randis)
 checkAllInsDiamRev()  return true if for all permutations x the Ulam distance between x and rev(x) equals the Ulam diameter
+ssort(x)              return the sequence of EXC using classical selection sort
 	""")
 
 #test function
@@ -685,7 +686,20 @@ def checkAllInsDiamRev():
 			return False
 	return True
 		
-		
+def ssort(x):
+	y = x[:]
+	s = []
+	for j in range(0,n-1):
+		imin = j
+		for i in range(j+1,n):
+			if y[i]<y[imin]:
+				imin = i
+		if imin!=j:
+			t = y[j]
+			y[j] = y[imin]
+			y[imin] = t
+			s.append(exc_nf((j,imin)))
+	return s		
 	
 	
 
