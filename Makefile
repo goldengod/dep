@@ -1,6 +1,6 @@
 CPP = g++
 CC = gcc
-CPPFLAGS = -O2 -Wall -DNDEBUG -DGFC
+CPPFLAGS = -O2 -Wall -DNDEBUG -DGFC -DONLINEPRINT
 CCFLAGS = -Wall
 INCLUDES = -I"/usr/include"
 LFLAGS = -L"/usr/lib"

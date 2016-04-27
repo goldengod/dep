@@ -3,6 +3,7 @@
 #include "random.h"
 #include <cstdlib>   //EXIT_SUCCESS, EXIT_FAILURE
 #include <iostream>  //cerr, cout, endl
+#include <iomanip>
 using namespace std;
 
 
@@ -19,7 +20,7 @@ int main(int argc, char** argv) {
 	int x[n];
 	for (int i=0; i<n; i++)
 		x[i] = atoi(argv[i+2]);
-	cout << "fitness = " << eval(x) << endl;
+	cout << "fitness = " << fixed << setprecision(10) << eval(x) << endl;
 	char s[PERMSTR_SIZE];
 	perm2str(x,n,s);
 	cout << "permutation = " << s << endl;
