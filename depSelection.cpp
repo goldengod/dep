@@ -155,7 +155,7 @@ void selection_crowding() {
 		if (fy1[i]>new_fit[i_closest]) { //favors, in case of ties, the old population individual
 #endif
 			child_to_replace[i_closest] = i;
-			new_fit[i] = fy1[i];
+			new_fit[i_closest] = fy1[i];	//THERE WAS A BUG, OLD CODE = new_fit[i] = fy1[i];
 		}
 		//goto next child
 	}
