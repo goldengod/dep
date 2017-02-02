@@ -110,7 +110,7 @@ randis(x,randlis)     return a sequence of INS tuples that sorts x (UNIFORM STEP
 randDecIns(x,randlis) return a INS decomposition of x (see randis)
 checkAllInsDiamRev()  return true if for all permutations x the Ulam distance between x and rev(x) equals the Ulam diameter
 ssort(x)              return the sequence of EXC using classical selection sort
-expInertia(nexp=1000) write how many inertia anomalies are over nexp random experiments
+expInertia(nexp,q)    write how many inertia anomalies with q adj.swaps are over nexp random experiments
 	""")
 
 #test function
@@ -702,15 +702,21 @@ def ssort(x):
 			s.append(exc_nf((j,imin)))
 	return s
 
-def expInertia(nexp=1000):
+def expInertia(nexp=1000,q=1):
 	anomalies = 0
 	for i in xrange(nexp):
 		x = prand()
 		dx = randDecAsw(x)
-		y = dot(x,asw(dx[0]))
+		#y = dot(x,asw(dx[0]))
+		y = [x[k] for k in xrange(n)] #
+		for j in xrange(q): #
+			if j>=len(dx): #
+				break #
+			y = dot(y,asw(dx[j])) #
 		wx = ninver(x)
 		wy = ninver(y)
-		if wy!=wx+1:
+		#if wy!=wx+1:
+		if wy!=wx+q: #
 			anomalies += 1
 	print "Anomalies: " + str(anomalies) + " / " + str(nexp)
 	
