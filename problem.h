@@ -40,6 +40,15 @@ extern double* p;						//additional cost vector
 #endif
 //END LOPCC PART
 
+//BEGIN NWTFT PART
+#ifdef NWTFT
+typedef int FitnessType;
+extern int n;                                                   //instance size
+extern int m;                                                   //instance size
+extern int** ptime;                                             //ptime matrix (n x m)
+#endif
+//END NWTFT PART
+
 //BEGIN COMMON PART
 #define STRING_LENGTH 256
 extern char instance[STRING_LENGTH];	//instance filename declaration

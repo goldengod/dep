@@ -111,6 +111,9 @@ randDecIns(x,randlis) return a INS decomposition of x (see randis)
 checkAllInsDiamRev()  return true if for all permutations x the Ulam distance between x and rev(x) equals the Ulam diameter
 ssort(x)              return the sequence of EXC using classical selection sort
 expInertia(nexp,q)    write how many inertia anomalies with q adj.swaps are over nexp random experiments
+all_asw_decomp(x)     return all the decompositions (using ASW) of x
+checkAverage(x,y)     check if the a*x+(1-a)*y has equiprobability
+perm2str(x)           return string representation of the permutation x
 	""")
 
 #test function
@@ -719,6 +722,78 @@ def expInertia(nexp=1000,q=1):
 		if wy!=wx+q: #
 			anomalies += 1
 	print "Anomalies: " + str(anomalies) + " / " + str(nexp)
+
+def all_asw_decomp_aux(a,L,sc,ld):
+	n=len(a)
+	if L==[]:
+		ld.append(sc)
+	else:
+		for i in L:
+			L1=[j for j in L if j!=i]
+			sc1=[i]+sc
+			swap(a,i,i+1) #scambia(a,i,i+1)
+			if i<n-2 and i+1 not in L1 and a[i+1]>a[i+2]:
+				L1.append(i+1)
+			if i>0 and i-1 not in L1 and a[i-1]>a[i]:
+				L1.append(i-1)
+			all_asw_decomp_aux(a,L1,sc1,ld)
+			swap(a,i,i+1) #scambia(a,i,i+1)
+
+def all_asw_decomp(a):
+	ld=[]
+	n=len(a)
+	L=[i for i in range(n-1) if a[i]>a[i+1]]
+	all_asw_decomp_aux(a,L,[],ld)
+	return ld
+
+def perm2str(x):
+	s = ""
+	for i in range(len(x)):
+		s += str(x[i])
+		if i<len(x)-1:
+			s += ","
+	return s
+
+def checkAverage(q):
+	for j in range(q):
+		x = prand()
+		y = prand()
+		if dk(x,y)<=1:
+			continue
+		#x+a*(y-x) and y+(1-a)*(x-y)
+		#z=y-x=x^-1*y and w=x-y=y^-1*x=inv(y-x)
+		z = dot(inv(x),y)
+		w = inv(z)
+		adz = all_asw_decomp(z)
+		l = len(adz[0])
+		k = random.randint(1,l-1) #in [1,l-1]
+		#k generators from (y-x) and l-k generators from (x-y)
+		dict1 = {}
+		dict2 = {}
+		for d in adz:
+			zz = x
+			for i in range(k):
+				zz = dot(zz,asw(d[i]))
+			sz = perm2str(zz)
+			if sz in dict1:
+				dict1[sz] += 1
+			else:
+				dict1[sz] = 1
+			ww = y
+			drev = rev(d)
+			for i in range(l-k):
+				ww = dot(ww,asw(drev[i]))
+			sw = perm2str(ww)
+			if sw in dict2:
+				dict2[sw] += 1
+			else:
+				dict2[sw] = 1
+		if dict1!=dict2:
+			return False;
+	return True
+		
+	
+	
 	
 	
 
@@ -727,3 +802,25 @@ def expInertia(nexp=1000,q=1):
 init()
 #test()
 help()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

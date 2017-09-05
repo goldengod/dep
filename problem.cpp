@@ -18,3 +18,6 @@
 	#include "lopcc.cpp"
 #endif
 
+#ifdef NWTFT
+	#include "nwtft.cpp"
+#endif

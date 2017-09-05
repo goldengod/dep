@@ -242,11 +242,11 @@ void crossover_obx(int i) {
 	//some debug
 #ifdef MYDEBUG
 	if (!permValid(y1[i],n)) {
-		cout << "PROBLEMA IN OBXCR CROSSOVER!!!" << endl;
+		cout << "PROBLEMA IN OBX CROSSOVER!!!" << endl;
 		exit(1);
 	}
 	if (nchilds==2 && !permValid(y2[i],n)) {
-		cout << "PROBLEMA IN OBXCR CROSSOVER!!!" << endl;
+		cout << "PROBLEMA IN OBX CROSSOVER!!!" << endl;
 		exit(1);
 	}
 #endif
